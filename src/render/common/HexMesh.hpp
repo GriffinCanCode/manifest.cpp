@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "../../core/math/Vector.hpp"
@@ -142,7 +143,7 @@ class [[deprecated("Use ProceduralHexRenderer for GPU-based rendering")]] HexMes
     static void populate_procedural_renderer(ProceduralHexRenderer& renderer,
                                              const std::vector<Tile*>& tiles) {
         renderer.clear_instances();
-        renderer.prepare_instances(std::span<const Tile* const>{tiles.data(), tiles.size()});
+        renderer.prepare_instances(std::span<const Tile* const>(tiles));
     }
 
    private:

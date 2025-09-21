@@ -151,7 +151,9 @@ void demonstrate_world_generation() {
     });
 
     std::cout << "\nTerrain Distribution:\n";
-    for (const auto& [terrain, count] : terrain_counts) {
+    for (const auto& pair : terrain_counts) {
+        TerrainType terrain = pair.first;
+        int count = pair.second;
         float percentage = (static_cast<float>(count) / world_map.tile_count()) * 100.0f;
         std::cout << "  " << static_cast<int>(terrain) << ": " << count << " (" << std::fixed
                   << std::setprecision(1) << percentage << "%)\n";
@@ -221,10 +223,11 @@ void demonstrate_time_system() {
 
     // Test timer
     int timer_count = 0;
-    auto timer = Timer(std::chrono::milliseconds(50), [&timer_count]() {
+    auto callback = [&timer_count]() {
         ++timer_count;
         std::cout << "Timer fired! Count: " << timer_count << "\n";
-    });
+    };
+    auto timer = Timer<decltype(callback)>(std::chrono::milliseconds(50), callback);
 
     for (int i = 0; i < 3; ++i) {
         timer.update(std::chrono::milliseconds(60));

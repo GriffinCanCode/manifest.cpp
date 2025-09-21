@@ -132,7 +132,11 @@ format_code() {
     
     log_info "Starting code formatting (check_only: $check_only)..."
     
-    mapfile -t files_to_process < <(find_source_files "$project_scope")
+    # Use while read loop instead of mapfile for better compatibility
+    files_to_process=()
+    while IFS= read -r file; do
+        files_to_process+=("$file")
+    done < <(find_source_files "$project_scope")
     
     if [ ${#files_to_process[@]} -eq 0 ]; then
         return 0
@@ -190,7 +194,11 @@ run_static_analysis() {
     
     log_info "Starting static analysis with clang-tidy..."
     
-    mapfile -t files_to_process < <(find_source_files "$project_scope")
+    # Use while read loop instead of mapfile for better compatibility
+    files_to_process=()
+    while IFS= read -r file; do
+        files_to_process+=("$file")
+    done < <(find_source_files "$project_scope")
     
     if [ ${#files_to_process[@]} -eq 0 ]; then
         return 0

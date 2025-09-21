@@ -1,11 +1,16 @@
 #include "HexRenderer.hpp"
 
 #include <cstddef>
+#include <expected>
 #include <span>
+#include <vector>
 
+#include "../../world/tiles/Tile.hpp"
+#include "HexMesh.hpp"
 #include "Renderer.hpp"
 
-namespace Manifest::Render {
+namespace Manifest {
+namespace Render {
 
 using namespace World::Tiles;
 
@@ -118,4 +123,5 @@ Result<void> HexRenderer::render_legacy(std::span<const Tile* const> tiles) {
     return {};  // Success placeholder
 }
 
-}  // namespace Manifest::Render
+}  // namespace Render
+}  // namespace Manifest
