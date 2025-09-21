@@ -1,0 +1,192 @@
+# C++ build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+*.out
+*.app
+*.dSYM/
+
+# CMake build directories and files
+build/
+Build/
+BUILD/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Makefile
+*.vcxproj*
+*.sln
+*.suo
+*.user
+
+# Lua compiled files
+*.luac
+
+# IDE and Editor files
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.vcxproj.filters.user
+*.sdf
+*.opensdf
+*.db
+*.ipch
+*.aps
+*.ncb
+*.opendb
+*.cachefile
+*.VC.db
+*.VC.opendb
+
+# CLion
+.idea/
+cmake-build-*/
+
+# Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+
+# Qt Creator
+*.pro.user*
+*.qbs.user*
+*.qtcreator.user*
+
+# Code::Blocks
+*.cb_temp
+*.depend
+*.layout
+
+# Dev-C++
+*.dev
+
+# CodeLite
+*.workspace.session
+
+# OS specific files
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Linux
+*~
+.directory
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+
+# Logs and databases
+*.log
+*.sqlite
+*.db3
+
+# Compiled Object files (additional patterns)
+*.slo
+*.lo
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries (additional patterns)
+*.lai
+*.la
+
+# Shared objects (Unix/Linux)
+*.so.*
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Package managers and dependencies
+conan.lock
+vcpkg_installed/
+_deps/
+
+# Testing frameworks
+Testing/
+tests/build/
+
+# Documentation build
+docs/build/
+docs/_build/
+
+# Profiling
+*.prof
+gmon.out
+
+# Coverage
+*.gcov
+*.gcda
+*.gcno
+lcov.info
+coverage.xml
+
+# Memory debugging
+*.memcheck
+valgrind.log
+
+# Static analysis
+cppcheck.xml
+*.sarif
+
+# Benchmark results
+*.benchmark
+
+# Custom build artifacts for this project
+bin/
+lib/
+obj/
+dist/

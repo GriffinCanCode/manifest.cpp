@@ -1,0 +1,95 @@
+# Git attributes for Manifest Engine
+# Ensures consistent line endings and diff handling across platforms
+
+# Set default behavior for all files
+* text=auto
+
+# Source code files
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.cxx text eol=lf
+*.hxx text eol=lf
+*.cc text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+
+# Configuration files
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+.clang-format text eol=lf
+.clang-tidy text eol=lf
+.editorconfig text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Shader files
+*.frag text eol=lf
+*.vert text eol=lf
+*.geom text eol=lf
+*.tesc text eol=lf
+*.tese text eol=lf
+*.comp text eol=lf
+*.glsl text eol=lf
+
+# Scripts
+*.sh text eol=lf
+*.py text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# Data files
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.toml text eol=lf
+
+# Binary files (don't modify)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.tga binary
+*.bmp binary
+*.dds binary
+*.hdr binary
+
+# Archives
+*.zip binary
+*.tar.gz binary
+*.tar.bz2 binary
+*.7z binary
+
+# Compiled binaries
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.a binary
+*.lib binary
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Audio/Video
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.mp4 binary
+*.avi binary
+
+# Language-specific diff drivers
+*.cpp diff=cpp
+*.hpp diff=cpp
+*.c diff=cpp
+*.h diff=cpp
+
+# Show function names in diffs
+*.cpp diff=cpp funcname
+*.hpp diff=cpp funcname

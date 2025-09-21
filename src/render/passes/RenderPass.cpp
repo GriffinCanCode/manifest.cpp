@@ -1,7 +1,8 @@
 #include "RenderPass.hpp"
-#include "ShadowPass.hpp"
-#include "MainPass.hpp" 
+
+#include "MainPass.hpp"
 #include "PostProcessPass.hpp"
+#include "ShadowPass.hpp"
 
 namespace Manifest {
 namespace Render {
@@ -20,6 +21,6 @@ std::unique_ptr<RenderPass> create_render_pass(PassType type) {
     }
 }
 
-} // namespace Passes
-} // namespace Render
-} // namespace Manifest
+}  // namespace Passes
+}  // namespace Render
+}  // namespace Manifest

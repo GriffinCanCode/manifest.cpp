@@ -1,7 +1,9 @@
 #include "MainPass.hpp"
-#include "../common/Renderer.hpp"
+
 #include <cstring>
 #include <span>
+
+#include "../common/Renderer.hpp"
 
 namespace Manifest {
 namespace Render {
@@ -11,40 +13,40 @@ Result<void> MainPass::initialize(Renderer* renderer) {
     if (!renderer) {
         return std::unexpected(RendererError::InvalidState);
     }
-    
+
     renderer_ = renderer;
-    
+
     // Initialize hex renderer with the same renderer
     hex_renderer_ = std::make_unique<ProceduralHexRenderer>();
-    // Note: We need to create a new renderer instance or modify ProceduralHexRenderer 
+    // Note: We need to create a new renderer instance or modify ProceduralHexRenderer
     // to accept a renderer pointer instead of owning it
     // For now, this is a design placeholder
-    
+
     // Create main pass resources
     if (auto result = create_main_resources(); !result) {
         return result;
     }
-    
+
     if (auto result = create_main_shaders(); !result) {
         return result;
     }
-    
+
     if (auto result = create_main_pipeline(); !result) {
         return result;
     }
-    
+
     is_initialized_ = true;
     return {};
 }
 
 void MainPass::shutdown() {
     if (!renderer_) return;
-    
+
     if (hex_renderer_) {
         hex_renderer_->shutdown();
         hex_renderer_.reset();
     }
-    
+
     if (main_pipeline_.is_valid()) {
         renderer_->destroy_pipeline(main_pipeline_);
     }
@@ -57,7 +59,7 @@ void MainPass::shutdown() {
     if (main_uniforms_buffer_.is_valid()) {
         renderer_->destroy_buffer(main_uniforms_buffer_);
     }
-    
+
     is_initialized_ = false;
 }
 
@@ -65,63 +67,64 @@ Result<void> MainPass::execute(const PassContext& context) {
     if (!is_initialized_) {
         return std::unexpected(RendererError::InvalidState);
     }
-    
+
     // Update uniforms with current frame data
     update_uniforms(context);
-    
+
     // Upload uniforms to GPU
     if (auto result = upload_uniforms(); !result) {
         return result;
     }
-    
+
     // Begin main render pass
-    renderer_->begin_render_pass(context.main_target, Vec4f{0.2f, 0.3f, 0.5f, 1.0f}); // Sky blue clear
-    
+    renderer_->begin_render_pass(context.main_target,
+                                 Vec4f{0.2f, 0.3f, 0.5f, 1.0f});  // Sky blue clear
+
     // Set main viewport
     renderer_->set_viewport(context.viewport);
-    
+
     // Bind main pipeline and uniforms
     renderer_->bind_pipeline(main_pipeline_);
     renderer_->bind_uniform_buffer(main_uniforms_buffer_, 0);
-    
+
     // Bind shadow map if available
     if (shadow_pass_ && shadow_pass_->get_shadow_map().is_valid()) {
         renderer_->bind_texture(shadow_pass_->get_shadow_map(), 1);
     }
-    
+
     // Use hex renderer for actual geometry rendering
     if (hex_renderer_) {
         // Update hex renderer with current camera settings
-        hex_renderer_->update_globals(context.view_projection_matrix, context.camera_position, context.elapsed_time);
-        hex_renderer_->update_lighting(context.sun_direction, context.sun_color, context.ambient_color, context.sun_intensity);
-        
+        hex_renderer_->update_globals(context.view_projection_matrix, context.camera_position,
+                                      context.elapsed_time);
+        hex_renderer_->update_lighting(context.sun_direction, context.sun_color,
+                                       context.ambient_color, context.sun_intensity);
+
         // Render hex geometry
         if (auto result = hex_renderer_->render(); !result) {
             renderer_->end_render_pass();
             return result;
         }
     }
-    
+
     renderer_->end_render_pass();
-    
+
     return {};
 }
 
 Result<void> MainPass::create_main_resources() {
     // Create main uniforms buffer
-    BufferDesc uniforms_desc{
-        .size = sizeof(MainUniforms),
-        .usage = BufferUsage::Uniform,
-        .host_visible = true,
-        .debug_name = "main_uniforms"
-    };
-    
+    BufferDesc uniforms_desc{.size = sizeof(MainUniforms),
+                             .usage = BufferUsage::Uniform,
+                             .host_visible = true,
+                             .debug_name = "main_uniforms"};
+
     auto buffer_result = renderer_->create_buffer(uniforms_desc);
     if (!buffer_result) {
         return std::unexpected(buffer_result.error());
     }
     main_uniforms_buffer_ = *buffer_result;
-    
+
     return {};
 }
 
@@ -255,34 +258,30 @@ void main() {
 
     // Create vertex shader
     const std::byte* vert_ptr = reinterpret_cast<const std::byte*>(vert_source.data());
-    ShaderDesc vert_desc{
-        .stage = ShaderStage::Vertex,
-        .bytecode = std::span<const std::byte>{vert_ptr, vert_source.size()},
-        .entry_point = "main",
-        .debug_name = "main_vertex"
-    };
-    
+    ShaderDesc vert_desc{.stage = ShaderStage::Vertex,
+                         .bytecode = std::span<const std::byte>{vert_ptr, vert_source.size()},
+                         .entry_point = "main",
+                         .debug_name = "main_vertex"};
+
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
         return std::unexpected(vert_result.error());
     }
     main_vertex_shader_ = *vert_result;
-    
+
     // Create fragment shader
     const std::byte* frag_ptr = reinterpret_cast<const std::byte*>(frag_source.data());
-    ShaderDesc frag_desc{
-        .stage = ShaderStage::Fragment,
-        .bytecode = std::span<const std::byte>{frag_ptr, frag_source.size()},
-        .entry_point = "main",
-        .debug_name = "main_fragment"
-    };
-    
+    ShaderDesc frag_desc{.stage = ShaderStage::Fragment,
+                         .bytecode = std::span<const std::byte>{frag_ptr, frag_source.size()},
+                         .entry_point = "main",
+                         .debug_name = "main_fragment"};
+
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
         return std::unexpected(frag_result.error());
     }
     main_fragment_shader_ = *frag_result;
-    
+
     return {};
 }
 
@@ -290,54 +289,57 @@ Result<void> MainPass::create_main_pipeline() {
     // Use same vertex attributes as hex renderer
     static const VertexAttribute main_attributes[] = {
         {.location = 0, .format = AttributeFormat::Float3, .offset = 0, .name = "position"},
-        {.location = 1, .format = AttributeFormat::Float4, .offset = sizeof(Vec3f), .name = "color"},
-        {.location = 2, .format = AttributeFormat::Float, .offset = sizeof(Vec3f) + sizeof(Vec4f), .name = "elevation"},
-        {.location = 3, .format = AttributeFormat::UInt, .offset = sizeof(Vec3f) + sizeof(Vec4f) + sizeof(float), .name = "terrain"}
-    };
-    
-    static const VertexBinding main_binding{
-        .binding = 0,
-        .stride = sizeof(Vec3f) + sizeof(Vec4f) + sizeof(float) + sizeof(std::uint32_t),
-        .attributes = main_attributes
-    };
-    
+        {.location = 1,
+         .format = AttributeFormat::Float4,
+         .offset = sizeof(Vec3f),
+         .name = "color"},
+        {.location = 2,
+         .format = AttributeFormat::Float,
+         .offset = sizeof(Vec3f) + sizeof(Vec4f),
+         .name = "elevation"},
+        {.location = 3,
+         .format = AttributeFormat::UInt,
+         .offset = sizeof(Vec3f) + sizeof(Vec4f) + sizeof(float),
+         .name = "terrain"}};
+
+    static const VertexBinding main_binding{.binding = 0,
+                                            .stride = sizeof(Vec3f) + sizeof(Vec4f) +
+                                                      sizeof(float) + sizeof(std::uint32_t),
+                                            .attributes = main_attributes};
+
     static const ShaderHandle shaders[] = {main_vertex_shader_, main_fragment_shader_};
     static const VertexBinding bindings[] = {main_binding};
-    
-    PipelineDesc pipeline_desc{
-        .shaders = shaders,
-        .vertex_bindings = bindings,
-        .render_state = RenderState{
-            .topology = PrimitiveTopology::Triangles,
-            .blend_mode = BlendMode::None,
-            .cull_mode = CullMode::Back,
-            .depth_test = DepthTest::Less,
-            .depth_write = true,
-            .wireframe = false
-        },
-        .render_target = {}, // Use default framebuffer
-        .debug_name = "main_pipeline"
-    };
-    
+
+    PipelineDesc pipeline_desc{.shaders = shaders,
+                               .vertex_bindings = bindings,
+                               .render_state = RenderState{.topology = PrimitiveTopology::Triangles,
+                                                           .blend_mode = BlendMode::None,
+                                                           .cull_mode = CullMode::Back,
+                                                           .depth_test = DepthTest::Less,
+                                                           .depth_write = true,
+                                                           .wireframe = false},
+                               .render_target = {},  // Use default framebuffer
+                               .debug_name = "main_pipeline"};
+
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
         return std::unexpected(pipeline_result.error());
     }
     main_pipeline_ = *pipeline_result;
-    
+
     return {};
 }
 
 void MainPass::update_uniforms(const PassContext& context) {
     main_uniforms_.view_projection_matrix = context.view_projection_matrix;
     main_uniforms_.camera_position = context.camera_position;
-    
+
     main_uniforms_.sun_direction = context.sun_direction;
     main_uniforms_.sun_intensity = context.sun_intensity;
     main_uniforms_.sun_color = context.sun_color;
     main_uniforms_.ambient_color = context.ambient_color;
     main_uniforms_.time = context.elapsed_time;
-    
+
     // Copy shadow data if available
     if (shadow_pass_) {
         const auto& shadow_uniforms = shadow_pass_->get_shadow_uniforms();
@@ -355,6 +357,6 @@ Result<void> MainPass::upload_uniforms() {
     return renderer_->update_buffer(main_uniforms_buffer_, 0, data);
 }
 
-} // namespace Passes
-} // namespace Render
-} // namespace Manifest
+}  // namespace Passes
+}  // namespace Render
+}  // namespace Manifest

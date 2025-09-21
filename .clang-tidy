@@ -1,0 +1,114 @@
+# Modern C++23 Static Analysis Configuration
+# Updated for 2025 with latest modernization checks
+
+---
+# Enable comprehensive modern C++ checks
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  google-*,
+  hicpp-*,
+  llvm-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  # Disable overly pedantic or conflicting checks
+  -bugprone-easily-swappable-parameters,
+  -cert-err58-cpp,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
+  -google-runtime-references,
+  -hicpp-avoid-c-arrays,
+  -hicpp-no-array-decay,
+  -hicpp-vararg,
+  -llvm-header-guard,
+  -misc-no-recursion,
+  -readability-magic-numbers,
+  -readability-avoid-const-params-in-decls,
+  -readability-function-cognitive-complexity
+
+# Inherit parent directory config
+InheritParentConfig: false
+
+# Header filtering
+HeaderFilterRegex: '(src/.*\.(hpp|h)$)'
+
+# Analysis options
+AnalyzeTemporaryDtors: false
+FormatStyle: file
+
+# Check-specific options
+CheckOptions:
+  # Naming conventions
+  readability-identifier-naming.NamespaceCase: CamelCase
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.TemplateParameterCase: CamelCase
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: '_'
+  readability-identifier-naming.ProtectedMemberSuffix: '_'
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.ConstexprVariableCase: lower_case
+  readability-identifier-naming.GlobalConstantCase: lower_case
+  readability-identifier-naming.StaticConstantCase: lower_case
+  
+  # Modern C++ preferences  
+  modernize-use-auto.MinTypeNameLength: 5
+  modernize-use-auto.RemoveStars: false
+  modernize-loop-convert.MaxCopySize: 16
+  modernize-loop-convert.MinConfidence: reasonable
+  modernize-pass-by-value.IncludeStyle: google
+  modernize-replace-auto-ptr.IncludeStyle: google
+  modernize-use-nullptr.NullMacros: 'NULL'
+  
+  # Performance
+  performance-for-range-copy.AllowedTypes: ''
+  performance-inefficient-vector-operation.VectorLikeClasses: '::std::vector'
+  performance-move-constructor-init.IncludeStyle: google
+  performance-type-promotion-in-math-fn.IncludeStyle: google
+  performance-unnecessary-value-param.AllowedTypes: ''
+  performance-unnecessary-value-param.IncludeStyle: google
+  
+  # Core Guidelines
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors: true
+  cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  
+  # Readability
+  readability-function-size.LineThreshold: 100
+  readability-function-size.StatementThreshold: 80
+  readability-function-size.BranchThreshold: 12
+  readability-function-size.ParameterThreshold: 8
+  readability-function-size.NestingThreshold: 6
+  readability-function-size.VariableThreshold: 25
+  
+  # Google style specific
+  google-readability-casting.DisableUnsignedIntegerConversions: false
+  google-readability-todo.CommentPragmas: '^(FIXME|TODO)'
+  
+  # Miscellaneous
+  misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  misc-throw-by-value-catch-by-reference.CheckThrowTemporaries: true
+  
+  # Concurrency (C++20/23 features)
+  concurrency-mt-unsafe.FunctionSet: any
+  
+  # CERT security
+  cert-err34-c.ReportMoreUnsafeFunctions: true
+  cert-str34-c.DiagnoseSecurity: true
+
+# System headers to ignore
+SystemHeaders: false
+
+# Warning options
+WarningsAsErrors: ''

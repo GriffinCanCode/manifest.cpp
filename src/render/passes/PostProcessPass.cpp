@@ -1,7 +1,9 @@
 #include "PostProcessPass.hpp"
-#include "../common/Renderer.hpp"
-#include <span>
+
 #include <cstring>
+#include <span>
+
+#include "../common/Renderer.hpp"
 
 namespace Manifest {
 namespace Render {
@@ -11,29 +13,29 @@ Result<void> PostProcessPass::initialize(Renderer* renderer) {
     if (!renderer) {
         return std::unexpected(RendererError::InvalidState);
     }
-    
+
     renderer_ = renderer;
-    
+
     // Create post-process resources
     if (auto result = create_postprocess_resources(); !result) {
         return result;
     }
-    
+
     if (auto result = create_postprocess_shaders(); !result) {
         return result;
     }
-    
+
     if (auto result = create_postprocess_pipeline(); !result) {
         return result;
     }
-    
+
     is_initialized_ = true;
     return {};
 }
 
 void PostProcessPass::shutdown() {
     if (!renderer_) return;
-    
+
     if (postprocess_pipeline_.is_valid()) {
         renderer_->destroy_pipeline(postprocess_pipeline_);
     }
@@ -55,7 +57,7 @@ void PostProcessPass::shutdown() {
     if (temp_texture_.is_valid()) {
         renderer_->destroy_texture(temp_texture_);
     }
-    
+
     is_initialized_ = false;
 }
 
@@ -63,82 +65,78 @@ Result<void> PostProcessPass::execute(const PassContext& context) {
     if (!is_initialized_) {
         return std::unexpected(RendererError::InvalidState);
     }
-    
+
     // Update uniforms for this frame
     update_uniforms(context);
-    
+
     // Upload uniforms to GPU
     if (auto result = upload_uniforms(); !result) {
         return result;
     }
-    
+
     // Begin post-process pass
     renderer_->begin_render_pass(temp_render_target_, Vec4f{0.0f, 0.0f, 0.0f, 0.0f});
-    
+
     // Set viewport
     renderer_->set_viewport(context.viewport);
-    
+
     // Bind post-process pipeline
     renderer_->bind_pipeline(postprocess_pipeline_);
     renderer_->bind_uniform_buffer(postprocess_uniforms_buffer_, 0);
-    
+
     // Bind input textures (main scene output and history for TAA)
     if (context.main_target.is_valid()) {
         // In a complete implementation, we'd get the color attachment from main_target
         // For now, this is a placeholder
     }
-    
+
     if (history_texture_.is_valid()) {
         renderer_->bind_texture(history_texture_, 1);
     }
-    
+
     // Draw fullscreen quad (no vertex buffer needed - generated in vertex shader)
-    DrawCommand draw_cmd{
-        .vertex_count = 3, // Triangle trick for fullscreen quad
-        .instance_count = 1,
-        .first_vertex = 0,
-        .first_instance = 0
-    };
-    
+    DrawCommand draw_cmd{.vertex_count = 3,  // Triangle trick for fullscreen quad
+                         .instance_count = 1,
+                         .first_vertex = 0,
+                         .first_instance = 0};
+
     renderer_->draw(draw_cmd);
-    
+
     renderer_->end_render_pass();
-    
+
     // Update frame index for TAA
     frame_index_++;
-    
+
     return {};
 }
 
 Result<void> PostProcessPass::create_postprocess_resources() {
     // Create temporary render texture (would match main render target resolution)
-    TextureDesc temp_tex_desc{
-        .width = 1920, // Would get from main render target
-        .height = 1080,
-        .depth = 1,
-        .mip_levels = 1,
-        .array_layers = 1,
-        .format = TextureFormat::RGBA16_FLOAT,
-        .render_target = true,
-        .debug_name = "postprocess_temp"
-    };
-    
+    TextureDesc temp_tex_desc{.width = 1920,  // Would get from main render target
+                              .height = 1080,
+                              .depth = 1,
+                              .mip_levels = 1,
+                              .array_layers = 1,
+                              .format = TextureFormat::RGBA16_FLOAT,
+                              .render_target = true,
+                              .debug_name = "postprocess_temp"};
+
     auto temp_tex_result = renderer_->create_texture(temp_tex_desc);
     if (!temp_tex_result) {
         return std::unexpected(temp_tex_result.error());
     }
     temp_texture_ = *temp_tex_result;
-    
+
     // Create history texture for TAA
     TextureDesc history_tex_desc = temp_tex_desc;
     history_tex_desc.debug_name = "taa_history";
-    
+
     auto history_tex_result = renderer_->create_texture(history_tex_desc);
     if (!history_tex_result) {
         return std::unexpected(history_tex_result.error());
     }
     history_texture_ = *history_tex_result;
-    
+
     // Create render target
     std::array<TextureHandle, 1> color_attachments{temp_texture_};
     auto rt_result = renderer_->create_render_target(color_attachments, {});
@@ -146,21 +144,19 @@ Result<void> PostProcessPass::create_postprocess_resources() {
         return std::unexpected(rt_result.error());
     }
     temp_render_target_ = *rt_result;
-    
+
     // Create uniforms buffer
-    BufferDesc uniforms_desc{
-        .size = sizeof(PostProcessUniforms),
-        .usage = BufferUsage::Uniform,
-        .host_visible = true,
-        .debug_name = "postprocess_uniforms"
-    };
-    
+    BufferDesc uniforms_desc{.size = sizeof(PostProcessUniforms),
+                             .usage = BufferUsage::Uniform,
+                             .host_visible = true,
+                             .debug_name = "postprocess_uniforms"};
+
     auto buffer_result = renderer_->create_buffer(uniforms_desc);
     if (!buffer_result) {
         return std::unexpected(buffer_result.error());
     }
     postprocess_uniforms_buffer_ = *buffer_result;
-    
+
     return {};
 }
 
@@ -273,62 +269,55 @@ void main() {
 
     // Create vertex shader
     const std::byte* vert_ptr = reinterpret_cast<const std::byte*>(vert_source.data());
-    ShaderDesc vert_desc{
-        .stage = ShaderStage::Vertex,
-        .bytecode = std::span<const std::byte>{vert_ptr, vert_source.size()},
-        .entry_point = "main",
-        .debug_name = "fullscreen_vertex"
-    };
-    
+    ShaderDesc vert_desc{.stage = ShaderStage::Vertex,
+                         .bytecode = std::span<const std::byte>{vert_ptr, vert_source.size()},
+                         .entry_point = "main",
+                         .debug_name = "fullscreen_vertex"};
+
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
         return std::unexpected(vert_result.error());
     }
     fullscreen_vertex_shader_ = *vert_result;
-    
+
     // Create fragment shader
     const std::byte* frag_ptr = reinterpret_cast<const std::byte*>(frag_source.data());
-    ShaderDesc frag_desc{
-        .stage = ShaderStage::Fragment,
-        .bytecode = std::span<const std::byte>{frag_ptr, frag_source.size()},
-        .entry_point = "main",
-        .debug_name = "postprocess_fragment"
-    };
-    
+    ShaderDesc frag_desc{.stage = ShaderStage::Fragment,
+                         .bytecode = std::span<const std::byte>{frag_ptr, frag_source.size()},
+                         .entry_point = "main",
+                         .debug_name = "postprocess_fragment"};
+
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
         return std::unexpected(frag_result.error());
     }
     postprocess_fragment_shader_ = *frag_result;
-    
+
     return {};
 }
 
 Result<void> PostProcessPass::create_postprocess_pipeline() {
     // No vertex attributes needed for fullscreen pass
     static const ShaderHandle shaders[] = {fullscreen_vertex_shader_, postprocess_fragment_shader_};
-    
+
     PipelineDesc pipeline_desc{
         .shaders = shaders,
-        .vertex_bindings = {}, // No vertex buffers
-        .render_state = RenderState{
-            .topology = PrimitiveTopology::Triangles,
-            .blend_mode = BlendMode::None,
-            .cull_mode = CullMode::None, // No culling for fullscreen
-            .depth_test = DepthTest::Always,
-            .depth_write = false,
-            .wireframe = false
-        },
+        .vertex_bindings = {},  // No vertex buffers
+        .render_state = RenderState{.topology = PrimitiveTopology::Triangles,
+                                    .blend_mode = BlendMode::None,
+                                    .cull_mode = CullMode::None,  // No culling for fullscreen
+                                    .depth_test = DepthTest::Always,
+                                    .depth_write = false,
+                                    .wireframe = false},
         .render_target = temp_render_target_,
-        .debug_name = "postprocess_pipeline"
-    };
-    
+        .debug_name = "postprocess_pipeline"};
+
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
         return std::unexpected(pipeline_result.error());
     }
     postprocess_pipeline_ = *pipeline_result;
-    
+
     return {};
 }
 
@@ -336,17 +325,18 @@ Vec2f PostProcessPass::get_taa_jitter() const {
     if ((enabled_effects_ & static_cast<std::uint32_t>(Effect::TAA)) == 0) {
         return Vec2f{0.0f, 0.0f};
     }
-    
+
     return TAA_JITTER_PATTERN[frame_index_ % TAA_JITTER_PATTERN.size()];
 }
 
 void PostProcessPass::update_uniforms(const PassContext& context) {
     uniforms_.screen_size = Vec2f{context.viewport.size.x(), context.viewport.size.y()};
-    uniforms_.texel_size = Vec2f{1.0f / context.viewport.size.x(), 1.0f / context.viewport.size.y()};
-    
+    uniforms_.texel_size =
+        Vec2f{1.0f / context.viewport.size.x(), 1.0f / context.viewport.size.y()};
+
     uniforms_.prev_view_projection_matrix = context.prev_view_projection_matrix;
     uniforms_.current_view_projection_matrix = context.view_projection_matrix;
-    
+
     uniforms_.jitter_offset = get_taa_jitter();
     uniforms_.enabled_effects = enabled_effects_;
 }
@@ -357,6 +347,6 @@ Result<void> PostProcessPass::upload_uniforms() {
     return renderer_->update_buffer(postprocess_uniforms_buffer_, 0, data);
 }
 
-} // namespace Passes
-} // namespace Render
-} // namespace Manifest
+}  // namespace Passes
+}  // namespace Render
+}  // namespace Manifest

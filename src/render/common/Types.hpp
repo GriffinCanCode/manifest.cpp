@@ -1,29 +1,21 @@
 #pragma once
 
-#include "../../core/types/Types.hpp"
-#include "../../core/math/Vector.hpp"
-#include "../../core/math/Matrix.hpp"
 #include <cstdint>
 #include <span>
 #include <string_view>
+
+#include "../../core/math/Matrix.hpp"
+#include "../../core/math/Vector.hpp"
+#include "../../core/types/Types.hpp"
 
 namespace Manifest::Render {
 
 using namespace Core::Types;
 using namespace Core::Math;
 
-enum class API : std::uint8_t {
-    Vulkan,
-    OpenGL
-};
+enum class API : std::uint8_t { Vulkan, OpenGL };
 
-enum class BufferUsage : std::uint8_t {
-    Vertex,
-    Index,
-    Uniform,
-    Storage,
-    Staging
-};
+enum class BufferUsage : std::uint8_t { Vertex, Index, Uniform, Storage, Staging };
 
 enum class TextureFormat : std::uint8_t {
     R8_UNORM,
@@ -61,19 +53,9 @@ enum class PrimitiveTopology : std::uint8_t {
     TriangleFan
 };
 
-enum class BlendMode : std::uint8_t {
-    None,
-    Alpha,
-    Additive,
-    Multiply
-};
+enum class BlendMode : std::uint8_t { None, Alpha, Additive, Multiply };
 
-enum class CullMode : std::uint8_t {
-    None,
-    Front,
-    Back,
-    FrontAndBack
-};
+enum class CullMode : std::uint8_t { None, Front, Back, FrontAndBack };
 
 enum class DepthTest : std::uint8_t {
     Never,
@@ -90,15 +72,15 @@ struct Viewport {
     Vec2f position{};
     Vec2f size{};
     Vec2f depth_range{0.0f, 1.0f};
-    
-    constexpr auto operator<=>(const Viewport&) const noexcept = default;
+
+    constexpr bool operator==(const Viewport&) const noexcept = default;
 };
 
 struct Scissor {
     Vec2i offset{};
     Vec2i extent{};
-    
-    constexpr auto operator<=>(const Scissor&) const noexcept = default;
+
+    constexpr bool operator==(const Scissor&) const noexcept = default;
 };
 
 struct RenderState {
@@ -108,8 +90,8 @@ struct RenderState {
     DepthTest depth_test{DepthTest::Less};
     bool depth_write{true};
     bool wireframe{false};
-    
-    constexpr auto operator<=>(const RenderState&) const noexcept = default;
+
+    constexpr bool operator==(const RenderState&) const noexcept = default;
 };
 
 // Resource handles using strong typing
@@ -215,11 +197,9 @@ struct RenderStats {
     std::uint32_t vertices_rendered{};
     std::uint32_t triangles_rendered{};
     std::uint64_t gpu_memory_used{};
-    
-    void reset() noexcept {
-        *this = {};
-    }
-    
+
+    void reset() noexcept { *this = {}; }
+
     RenderStats& operator+=(const RenderStats& other) noexcept {
         draw_calls += other.draw_calls;
         vertices_rendered += other.vertices_rendered;
@@ -229,4 +209,4 @@ struct RenderStats {
     }
 };
 
-} // namespace Manifest::Render
+}  // namespace Manifest::Render

@@ -1,0 +1,61 @@
+# EditorConfig for Manifest Engine
+# Ensures consistent formatting across all IDEs and editors
+# https://editorconfig.org/
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+
+# C++ source files
+[*.{cpp,cxx,cc,c++,hpp,hxx,hh,h++,h,c}]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+# CMake files
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 2
+
+# Configuration files
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.{md,markdown}]
+indent_style = space
+indent_size = 2
+# Don't trim trailing whitespace in markdown (needed for line breaks)
+trim_trailing_whitespace = false
+
+# Makefiles
+[{Makefile,*.mk}]
+indent_style = tab
+tab_width = 4
+
+# Shell scripts
+[*.{sh,bash,zsh}]
+indent_style = space
+indent_size = 2
+
+# Python files (for build scripts)
+[*.py]
+indent_style = space
+indent_size = 4
+
+# GLSL shaders
+[*.{frag,vert,geom,tesc,tese,comp,glsl}]
+indent_style = space
+indent_size = 4
+
+# Data files
+[*.{xml,toml,ini}]
+indent_style = space
+indent_size = 2

@@ -12,14 +12,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-# Compiler optimizations
+# Modern C++23 compiler optimizations and warnings
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    # Core warnings
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+    
+    # Additional modern C++23 warnings
+    add_compile_options(
+        -Wshadow -Wold-style-cast -Wcast-align -Wunused
+        -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion
+        -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches
+        -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion
+        -Wformat=2 -Wlifetime -Wimplicit-fallthrough
+    )
+    
+    # Performance optimizations
     add_compile_options(-march=native -mtune=native)
+    
+    # C++23 specific warnings (Clang/GCC 12+)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12)
+        add_compile_options(-Wc++23-extensions)
+    endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    # MSVC warnings and optimizations
     add_compile_options(/W4 /WX /arch:AVX2)
+    add_compile_options(/permissive- /Zc:__cplusplus /Zc:preprocessor)
 endif()
 
 # Build types
@@ -72,3 +91,68 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Assets
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
+
+# === Code Quality and Formatting Tools ===
+
+# Enable compile commands export for clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Find clang-format and clang-tidy
+find_program(CLANG_FORMAT NAMES clang-format)
+find_program(CLANG_TIDY NAMES clang-tidy)
+
+# Create formatting target
+if(CLANG_FORMAT)
+    # Find all C++ source files
+    file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
+        ${CMAKE_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_SOURCE_DIR}/src/*.hpp
+        ${CMAKE_SOURCE_DIR}/src/*.cxx
+        ${CMAKE_SOURCE_DIR}/src/*.hxx
+        ${CMAKE_SOURCE_DIR}/src/*.cc
+        ${CMAKE_SOURCE_DIR}/src/*.h
+    )
+    
+    # Format target
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT} -i ${ALL_CXX_SOURCE_FILES}
+        COMMENT "Formatting code with clang-format"
+        VERBATIM
+    )
+    
+    # Check format target (CI-friendly)
+    add_custom_target(check-format
+        COMMAND ${CLANG_FORMAT} --dry-run --Werror ${ALL_CXX_SOURCE_FILES}
+        COMMENT "Checking code formatting"
+        VERBATIM
+    )
+    
+    message(STATUS "clang-format found: ${CLANG_FORMAT}")
+    message(STATUS "  Run 'make format' to format code")
+    message(STATUS "  Run 'make check-format' to check formatting")
+else()
+    message(WARNING "clang-format not found - code formatting targets disabled")
+endif()
+
+# Create static analysis target
+if(CLANG_TIDY)
+    add_custom_target(tidy
+        COMMAND ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR} ${ALL_CXX_SOURCE_FILES}
+        COMMENT "Running clang-tidy static analysis"
+        VERBATIM
+    )
+    
+    message(STATUS "clang-tidy found: ${CLANG_TIDY}")
+    message(STATUS "  Run 'make tidy' to run static analysis")
+else()
+    message(WARNING "clang-tidy not found - static analysis target disabled")
+endif()
+
+# Combined code quality target
+if(CLANG_FORMAT AND CLANG_TIDY)
+    add_custom_target(quality
+        DEPENDS check-format tidy
+        COMMENT "Running all code quality checks"
+    )
+    message(STATUS "  Run 'make quality' to run all code quality checks")
+endif()

@@ -1,0 +1,55 @@
+# Modern C++23 Formatting Configuration for Manifest Engine
+# Based on Google style with C++23 enhancements
+
+---
+Language: Cpp
+BasedOnStyle: Google
+
+# C++ Standard - using c++2b for C++23 support (Auto also works)
+Standard: Auto
+
+# Core formatting settings
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Template and modern C++ formatting
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: true
+
+# Namespace formatting
+FixNamespaceComments: true
+CompactNamespaces: false
+
+# Pointer and reference alignment  
+PointerAlignment: Left
+
+# Include sorting for better organization
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+# Modern C++ spacing
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeRangeBasedForLoopColon: true
+
+# Comments
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 2
+
+# Break before binary operators for readability  
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+
+# Constructor formatting
+BreakConstructorInitializers: BeforeColon
+
+# Allow short constructs
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+
+# Penalties for line breaking
+PenaltyReturnTypeOnItsOwnLine: 200
+PenaltyBreakBeforeFirstCallParameter: 19
