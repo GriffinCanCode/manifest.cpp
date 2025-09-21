@@ -1,3 +1,6 @@
+# Include subdirectories
+add_subdirectory(passes)
+
 add_library(render STATIC
     common/Types.hpp
     common/Renderer.hpp
@@ -14,6 +17,9 @@ add_library(render STATIC
     RendererFactory.cpp
 )
 
+# Create alias for common render components
+add_library(ManifestRenderCommon ALIAS render)
+
 target_include_directories(render 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/..
@@ -24,6 +30,7 @@ target_include_directories(render
 target_link_libraries(render 
     PUBLIC
         core
+        ManifestRenderPasses
         ${Vulkan_LIBRARIES}
         ${OPENGL_LIBRARIES}
         glfw

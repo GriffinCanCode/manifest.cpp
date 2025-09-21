@@ -38,9 +38,13 @@
     - ✅ Added instanced rendering with minimal vertex data
     - ✅ Deprecated legacy CPU-based HexMeshGenerator
 - [x] Instanced rendering for millions of tiles
-- [ ] Multiple render passes (shadow, main, post-process)
-    - Current: Single render pass support
-    - Missing: Multi-pass pipeline, shadow pass, post-processing
+- [x] Multiple render passes (shadow, main, post-process)
+    - ✅ Implemented modular RenderPass base class system
+    - ✅ Created ShadowPass with cascaded shadow mapping
+    - ✅ Enhanced MainPass with shadow mapping integration  
+    - ✅ Added PostProcessPass with TAA and tone mapping
+    - ✅ Built RenderGraph for automatic pass management
+    - ✅ Created MultiPassDemo showcasing complete pipeline
 - [x] Level-of-detail system for zooming (region → province → tile)
 - [ ] Frustum culling with spatial hashing
     - Missing: Frustum culling implementation
