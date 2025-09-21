@@ -2,8 +2,10 @@
 
 #include "../../core/math/Vector.hpp"
 #include "../../world/tiles/Tile.hpp"
+#include "ProceduralHexRenderer.hpp"
 #include <vector>
 #include <cmath>
+#include <memory>
 
 namespace Manifest {
 namespace Render {
@@ -25,7 +27,11 @@ struct Vertex {
     }
 };
 
-class HexMeshGenerator {
+/**
+ * Legacy CPU-based hex mesh generator (deprecated - use ProceduralHexRenderer for new code)
+ * Maintained for compatibility and fallback scenarios
+ */
+class [[deprecated("Use ProceduralHexRenderer for GPU-based rendering")]] HexMeshGenerator {
     static constexpr float HEX_RADIUS = 1.0f;
     static constexpr float HEIGHT_SCALE = 0.1f;
     static constexpr std::size_t HEX_SIDES = 6;
@@ -124,6 +130,23 @@ public:
     static HexMesh get_base_hex_mesh() {
         static HexMesh base_mesh = create_base_hex();
         return base_mesh;
+    }
+    
+    /**
+     * Create a ProceduralHexRenderer for modern GPU-based rendering
+     * This is the recommended approach for new code
+     */
+    [[nodiscard]] static std::unique_ptr<ProceduralHexRenderer> create_procedural_renderer() {
+        return std::make_unique<ProceduralHexRenderer>();
+    }
+    
+    /**
+     * Convert legacy instance data to procedural renderer format
+     */
+    static void populate_procedural_renderer(ProceduralHexRenderer& renderer, 
+                                           const std::vector<Tile*>& tiles) {
+        renderer.clear_instances();
+        renderer.prepare_instances(std::span<const Tile* const>{tiles.data(), tiles.size()});
     }
     
 private:

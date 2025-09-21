@@ -32,9 +32,11 @@
 ### Rendering Pipeline
 - [x] Vulkan/OpenGL abstraction layer
 - [x] Shader hot-reloading system
-- [ ] Procedural hex mesh generation in vertex shader
-    - Current: CPU-side mesh generation in HexMeshGenerator
-    - Missing: Move to vertex shader for GPU efficiency
+- [x] Procedural hex mesh generation in vertex shader
+    - ✅ Created vertex/fragment shaders for procedural hex generation
+    - ✅ Implemented ProceduralHexRenderer class for GPU-based rendering
+    - ✅ Added instanced rendering with minimal vertex data
+    - ✅ Deprecated legacy CPU-based HexMeshGenerator
 - [x] Instanced rendering for millions of tiles
 - [ ] Multiple render passes (shadow, main, post-process)
     - Current: Single render pass support

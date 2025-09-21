@@ -2,6 +2,11 @@ add_library(render STATIC
     common/Types.hpp
     common/Renderer.hpp
     common/Camera.hpp
+    common/HexMesh.hpp
+    common/ProceduralHexRenderer.hpp
+    common/ProceduralHexRenderer.cpp
+    common/HexRenderer.hpp
+    common/HexRenderer.cpp
     opengl/OpenGLRenderer.hpp
     opengl/OpenGLRenderer.cpp
     vulkan/VulkanRenderer.hpp  
