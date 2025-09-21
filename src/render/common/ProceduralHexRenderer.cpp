@@ -6,6 +6,7 @@
 #include <fstream>
 #include <span>
 #include <sstream>
+#include <algorithm>
 
 #include "../../core/math/Vector.hpp"
 #include "Renderer.hpp"
@@ -36,6 +37,9 @@ Result<void> ProceduralHexRenderer::initialize(std::unique_ptr<Renderer> rendere
     if (auto result = create_pipeline(); !result) {
         return result;
     }
+
+    // Initialize culling systems
+    ensure_culling_systems();
 
     is_initialized_ = true;
     return {};
@@ -73,6 +77,11 @@ void ProceduralHexRenderer::update_globals(const Mat4f& view_proj, const Vec3f& 
     global_uniforms_.view_projection_matrix = view_proj;
     global_uniforms_.camera_position = camera_pos;
     global_uniforms_.time = time;
+    
+    // Update frustum culler with new view-projection matrix
+    if (frustum_culler_ && culling_enabled_) {
+        frustum_culler_->update_frustum(view_proj);
+    }
 }
 
 void ProceduralHexRenderer::update_lighting(const Vec3f& sun_dir, const Vec3f& sun_color,
@@ -84,7 +93,67 @@ void ProceduralHexRenderer::update_lighting(const Vec3f& sun_dir, const Vec3f& s
     lighting_uniforms_.camera_position = global_uniforms_.camera_position;
 }
 
-void ProceduralHexRenderer::prepare_instances(std::span<const Tile* const> tiles) {
+void ProceduralHexRenderer::set_world_tiles(const std::vector<const Tile*>& tiles) {
+    all_tiles_.clear();
+    all_tiles_.reserve(tiles.size());
+    
+    for (const Tile* tile : tiles) {
+        if (tile) {
+            all_tiles_.push_back(tile);
+        }
+    }
+    
+    spatial_hash_dirty_ = true;
+}
+
+void ProceduralHexRenderer::prepare_instances_culled() {
+    current_instances_.clear();
+    
+    if (!culling_enabled_ || all_tiles_.empty()) {
+        // Fallback to rendering all tiles without culling
+        prepare_instances(all_tiles_);
+        return;
+    }
+    
+    ensure_culling_systems();
+    update_spatial_hash();
+    
+    // Perform frustum culling using spatial hash
+    if (spatial_hash_ && frustum_culler_) {
+        spatial_hash_->query_frustum(*frustum_culler_, culling_query_result_);
+        
+        // Estimate instance count for better performance
+        std::size_t visible_count = culling_query_result_.total_visible();
+        current_instances_.reserve(std::min(visible_count, MAX_INSTANCES));
+        
+        // Convert visible tiles to instances
+        auto process_tiles = [this](const std::vector<const Tile*>& tiles) {
+            for (const Tile* tile : tiles) {
+                if (!tile || current_instances_.size() >= MAX_INSTANCES) {
+                    continue;
+                }
+                
+                Vec3f world_pos = hex_coord_to_world(tile->coordinate(), global_uniforms_.hex_radius);
+                float elevation = tile->elevation() / 255.0f;
+                Vec4f color = get_terrain_color(tile->terrain(), elevation);
+                
+                current_instances_.push_back(
+                    HexInstance{.position = world_pos,
+                                .color = color,
+                                .elevation = elevation,
+                                .terrain = static_cast<std::uint32_t>(tile->terrain())});
+            }
+        };
+        
+        // Process fully visible tiles (inside frustum)
+        process_tiles(culling_query_result_.visible_tiles);
+        
+        // Process partially visible tiles (intersecting frustum)
+        process_tiles(culling_query_result_.intersecting_tiles);
+    }
+}
+
+void ProceduralHexRenderer::prepare_instances(const std::vector<const Tile*>& tiles) {
     current_instances_.clear();
     current_instances_.reserve(std::min(tiles.size(), MAX_INSTANCES));
 
@@ -323,6 +392,54 @@ Result<void> ProceduralHexRenderer::upload_uniforms() {
     const std::byte* lighting_ptr = reinterpret_cast<const std::byte*>(&lighting_uniforms_);
     std::span<const std::byte> lighting_data{lighting_ptr, sizeof(LightingUniforms)};
     return renderer_->update_buffer(lighting_uniforms_buffer_, 0, lighting_data);
+}
+
+// Culling statistics methods
+std::size_t ProceduralHexRenderer::get_tiles_tested() const noexcept {
+    return culling_query_result_.total_tested;
+}
+
+std::size_t ProceduralHexRenderer::get_tiles_culled() const noexcept {
+    return culling_query_result_.total_culled;
+}
+
+std::size_t ProceduralHexRenderer::get_tiles_rendered() const noexcept {
+    return current_instances_.size();
+}
+
+// Private helper methods
+void ProceduralHexRenderer::update_spatial_hash() {
+    if (!spatial_hash_ || !spatial_hash_dirty_) {
+        return;
+    }
+    
+    // Update hex radius in spatial hash if changed
+    spatial_hash_->set_hex_radius(global_uniforms_.hex_radius);
+    
+    // Rebuild spatial hash with current tiles
+    if (!all_tiles_.empty()) {
+        spatial_hash_->rebuild(all_tiles_);
+    }
+    
+    spatial_hash_dirty_ = false;
+}
+
+void ProceduralHexRenderer::ensure_culling_systems() {
+    if (!frustum_culler_) {
+        frustum_culler_ = std::make_unique<FrustumCuller>();
+    }
+    
+    if (!spatial_hash_) {
+        // Create spatial hash with reasonable defaults:
+        // - Base bucket size of 16 hex tiles 
+        // - 3 hierarchical levels for multi-scale culling
+        spatial_hash_ = std::make_unique<SpatialHash>(
+            global_uniforms_.hex_radius, 
+            16,  // base bucket size
+            3    // number of levels
+        );
+        spatial_hash_dirty_ = true;
+    }
 }
 
 }  // namespace Manifest::Render

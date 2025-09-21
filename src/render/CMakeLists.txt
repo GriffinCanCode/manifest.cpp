@@ -1,4 +1,5 @@
 # Include subdirectories
+add_subdirectory(culling)
 add_subdirectory(passes)
 
 add_library(render STATIC
@@ -30,6 +31,7 @@ target_include_directories(render
 target_link_libraries(render 
     PUBLIC
         core
+        culling
         ManifestRenderPasses
         ${Vulkan_LIBRARIES}
         ${OPENGL_LIBRARIES}

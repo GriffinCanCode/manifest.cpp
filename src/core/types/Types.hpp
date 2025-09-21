@@ -4,9 +4,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace Manifest {
-namespace Core {
-namespace Types {
+namespace Manifest::Core::Types {
 
 // Strong typing for game IDs to prevent mixing different entity types
 template <typename Tag, typename ValueType = std::uint32_t>
@@ -219,6 +217,4 @@ constexpr T toggle_bit(T value, std::uint8_t bit) noexcept {
     return value ^ (T{1} << bit);
 }
 
-}  // namespace Types
-}  // namespace Core
-}  // namespace Manifest
+} // namespace Manifest::Core::Types

@@ -1,19 +1,33 @@
 #pragma once
 
+// Cross-platform OpenGL headers
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#include <OpenGL/gl3.h>
+#else
 #include <GL/gl.h>
+#include <GL/glext.h>
+#endif
 
-#include <chrono>
+// Define GL_BUFFER if not available (for debug labeling)
+#ifndef GL_BUFFER
+#define GL_BUFFER 0x82E0
+#endif
+
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <memory>
 #include <span>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "../common/Renderer.hpp"
 
-namespace Manifest::Render::OpenGL {
+namespace Manifest {
+namespace Render {
+namespace OpenGL {
 
 class ShaderHotReloader {
     std::unordered_map<ShaderHandle, std::filesystem::path> shader_paths_;
@@ -35,7 +49,9 @@ class ShaderHotReloader {
     std::vector<ShaderHandle> check_for_changes() {
         std::vector<ShaderHandle> changed_shaders;
 
-        for (const auto& [handle, path] : shader_paths_) {
+        for (const auto& pair : shader_paths_) {
+            const auto& handle = pair.first;
+            const auto& path = pair.second;
             if (!std::filesystem::exists(path)) continue;
 
             auto current_time = std::filesystem::last_write_time(path);
@@ -135,23 +151,28 @@ class OpenGLRenderer : public Renderer {
 
     void shutdown() override {
         // Clean up all resources
-        for (auto& [handle, info] : render_targets_) {
+        for (auto& pair : render_targets_) {
+            auto& info = pair.second;
             if (info.framebuffer) glDeleteFramebuffers(1, &info.framebuffer);
         }
 
-        for (auto& [handle, info] : pipelines_) {
+        for (auto& pair : pipelines_) {
+            auto& info = pair.second;
             if (info.program) glDeleteProgram(info.program);
         }
 
-        for (auto& [handle, info] : shaders_) {
+        for (auto& pair : shaders_) {
+            auto& info = pair.second;
             if (info.id) glDeleteShader(info.id);
         }
 
-        for (auto& [handle, info] : textures_) {
+        for (auto& pair : textures_) {
+            auto& info = pair.second;
             if (info.id) glDeleteTextures(1, &info.id);
         }
 
-        for (auto& [handle, info] : buffers_) {
+        for (auto& pair : buffers_) {
+            auto& info = pair.second;
             if (info.id) glDeleteBuffers(1, &info.id);
         }
 
@@ -381,88 +402,7 @@ class OpenGLRenderer : public Renderer {
     void reset_stats() noexcept override { stats_.reset(); }
 
    private:
-    static void APIENTRY debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                        GLsizei length, const GLchar* message,
-                                        const void* user_param) {
-        // Handle OpenGL debug messages
-        if (severity == GL_DEBUG_SEVERITY_HIGH) {
-            // Log error
-        } else if (severity == GL_DEBUG_SEVERITY_MEDIUM) {
-            // Log warning
-        }
-    }
-
-    void reload_shader(ShaderHandle handle) {
-        auto it = shaders_.find(handle);
-        if (it == shaders_.end()) return;
-
-        // Recompile shader
-        GLuint shader_id = it->second.id;
-        const char* source_ptr = it->second.source_code.c_str();
-
-        glShaderSource(shader_id, 1, &source_ptr, nullptr);
-        glCompileShader(shader_id);
-
-        // Check compilation
-        GLint compiled;
-        glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compiled);
-        if (!compiled) {
-            // Log compilation error but don't fail completely
-            return;
-        }
-
-        // Relink all pipelines using this shader
-        for (auto& [pipeline_handle, pipeline_info] : pipelines_) {
-            bool uses_shader = std::find(pipeline_info.shaders.begin(), pipeline_info.shaders.end(),
-                                         handle) != pipeline_info.shaders.end();
-
-            if (uses_shader) {
-                relink_pipeline(pipeline_handle);
-            }
-        }
-    }
-
-    void relink_pipeline(PipelineHandle handle) {
-        auto it = pipelines_.find(handle);
-        if (it == pipelines_.end()) return;
-
-        GLuint program = it->second.program;
-
-        // Detach old shaders
-        for (ShaderHandle shader_handle : it->second.shaders) {
-            auto shader_it = shaders_.find(shader_handle);
-            if (shader_it != shaders_.end()) {
-                glDetachShader(program, shader_it->second.id);
-            }
-        }
-
-        // Attach updated shaders
-        for (ShaderHandle shader_handle : it->second.shaders) {
-            auto shader_it = shaders_.find(shader_handle);
-            if (shader_it != shaders_.end()) {
-                glAttachShader(program, shader_it->second.id);
-            }
-        }
-
-        // Relink
-        glLinkProgram(program);
-
-        // Check link status
-        GLint linked;
-        glGetProgramiv(program, GL_LINK_STATUS, &linked);
-        if (!linked) {
-            // Log link error
-        }
-
-        // Detach shaders again
-        for (ShaderHandle shader_handle : it->second.shaders) {
-            auto shader_it = shaders_.find(shader_handle);
-            if (shader_it != shaders_.end()) {
-                glDetachShader(program, shader_it->second.id);
-            }
-        }
-    }
-
+    // Static utility functions
     static GLenum buffer_usage_to_gl_target(BufferUsage usage) {
         switch (usage) {
             case BufferUsage::Vertex:
@@ -518,6 +458,126 @@ class OpenGLRenderer : public Renderer {
         }
     }
 
+    static GLenum depth_test_to_gl(DepthTest test) {
+        switch (test) {
+            case DepthTest::Never:
+                return GL_NEVER;
+            case DepthTest::Less:
+                return GL_LESS;
+            case DepthTest::Equal:
+                return GL_EQUAL;
+            case DepthTest::LessEqual:
+                return GL_LEQUAL;
+            case DepthTest::Greater:
+                return GL_GREATER;
+            case DepthTest::NotEqual:
+                return GL_NOTEQUAL;
+            case DepthTest::GreaterEqual:
+                return GL_GEQUAL;
+            case DepthTest::Always:
+                return GL_ALWAYS;
+            default:
+                return GL_LESS;
+        }
+    }
+
+    static GLenum cull_mode_to_gl(CullMode mode) {
+        switch (mode) {
+            case CullMode::Front:
+                return GL_FRONT;
+            case CullMode::Back:
+                return GL_BACK;
+            case CullMode::FrontAndBack:
+                return GL_FRONT_AND_BACK;
+            default:
+                return GL_BACK;
+        }
+    }
+
+    static void APIENTRY debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                        GLsizei length, const GLchar* message,
+                                        const void* user_param) {
+        // Handle OpenGL debug messages
+        if (severity == GL_DEBUG_SEVERITY_HIGH) {
+            // Log error
+        } else if (severity == GL_DEBUG_SEVERITY_MEDIUM) {
+            // Log warning
+        }
+    }
+
+    void reload_shader(ShaderHandle handle) {
+        auto it = shaders_.find(handle);
+        if (it == shaders_.end()) return;
+
+        // Recompile shader
+        GLuint shader_id = it->second.id;
+        const char* source_ptr = it->second.source_code.c_str();
+
+        glShaderSource(shader_id, 1, &source_ptr, nullptr);
+        glCompileShader(shader_id);
+
+        // Check compilation
+        GLint compiled;
+        glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compiled);
+        if (!compiled) {
+            // Log compilation error but don't fail completely
+            return;
+        }
+
+        // Relink all pipelines using this shader
+        for (auto& pair : pipelines_) {
+            const auto& pipeline_handle = pair.first;
+            auto& pipeline_info = pair.second;
+            bool uses_shader = std::find(pipeline_info.shaders.begin(), pipeline_info.shaders.end(),
+                                         handle) != pipeline_info.shaders.end();
+
+            if (uses_shader) {
+                relink_pipeline(pipeline_handle);
+            }
+        }
+    }
+
+    void relink_pipeline(PipelineHandle handle) {
+        auto it = pipelines_.find(handle);
+        if (it == pipelines_.end()) return;
+
+        GLuint program = it->second.program;
+
+        // Detach old shaders
+        for (ShaderHandle shader_handle : it->second.shaders) {
+            auto shader_it = shaders_.find(shader_handle);
+            if (shader_it != shaders_.end()) {
+                glDetachShader(program, shader_it->second.id);
+            }
+        }
+
+        // Attach updated shaders
+        for (ShaderHandle shader_handle : it->second.shaders) {
+            auto shader_it = shaders_.find(shader_handle);
+            if (shader_it != shaders_.end()) {
+                glAttachShader(program, shader_it->second.id);
+            }
+        }
+
+        // Relink
+        glLinkProgram(program);
+
+        // Check link status
+        GLint linked;
+        glGetProgramiv(program, GL_LINK_STATUS, &linked);
+        if (!linked) {
+            // Log link error
+        }
+
+        // Detach shaders again
+        for (ShaderHandle shader_handle : it->second.shaders) {
+            auto shader_it = shaders_.find(shader_handle);
+            if (shader_it != shaders_.end()) {
+                glDetachShader(program, shader_it->second.id);
+            }
+        }
+    }
+
     void apply_render_state(const RenderState& state) {
         // Blend mode
         switch (state.blend_mode) {
@@ -558,42 +618,6 @@ class OpenGLRenderer : public Renderer {
 
         // Wireframe
         glPolygonMode(GL_FRONT_AND_BACK, state.wireframe ? GL_LINE : GL_FILL);
-    }
-
-    static GLenum depth_test_to_gl(DepthTest test) {
-        switch (test) {
-            case DepthTest::Never:
-                return GL_NEVER;
-            case DepthTest::Less:
-                return GL_LESS;
-            case DepthTest::Equal:
-                return GL_EQUAL;
-            case DepthTest::LessEqual:
-                return GL_LEQUAL;
-            case DepthTest::Greater:
-                return GL_GREATER;
-            case DepthTest::NotEqual:
-                return GL_NOTEQUAL;
-            case DepthTest::GreaterEqual:
-                return GL_GEQUAL;
-            case DepthTest::Always:
-                return GL_ALWAYS;
-            default:
-                return GL_LESS;
-        }
-    }
-
-    static GLenum cull_mode_to_gl(CullMode mode) {
-        switch (mode) {
-            case CullMode::Front:
-                return GL_FRONT;
-            case CullMode::Back:
-                return GL_BACK;
-            case CullMode::FrontAndBack:
-                return GL_FRONT_AND_BACK;
-            default:
-                return GL_BACK;
-        }
     }
 
     void set_gl_object_label(GLenum identifier, GLuint name, std::string_view label) {
@@ -654,4 +678,6 @@ class OpenGLRenderer : public Renderer {
     void insert_debug_marker(std::string_view name) override {}
 };
 
-}  // namespace Manifest::Render::OpenGL
+}  // namespace OpenGL
+}  // namespace Render
+}  // namespace Manifest

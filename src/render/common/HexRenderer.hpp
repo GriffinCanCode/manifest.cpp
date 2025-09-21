@@ -1,15 +1,15 @@
 #pragma once
 
-#include <expected>
 #include <memory>
-#include <span>
+#include <vector>
 
 #include "../../core/math/Matrix.hpp"
 #include "../../core/math/Vector.hpp"
 #include "ProceduralHexRenderer.hpp"
 #include "Types.hpp"
 
-namespace Manifest::Render {
+namespace Manifest {
+namespace Render {
 
 /**
  * High-level hex rendering interface that automatically chooses between
@@ -41,8 +41,8 @@ class HexRenderer {
     /**
      * Initialize the hex renderer with specified mode
      */
-    [[nodiscard]] Result<void> initialize(std::unique_ptr<class Renderer> renderer,
-                                          RenderingMode mode = RenderingMode::Auto);
+    [[nodiscard]] bool initialize(std::unique_ptr<class Renderer> renderer,
+                                  RenderingMode mode = RenderingMode::Auto);
 
     /**
      * Shutdown and cleanup
@@ -59,7 +59,7 @@ class HexRenderer {
     /**
      * Render hex tiles
      */
-    [[nodiscard]] Result<void> render_tiles(std::span<const World::Tiles::Tile* const> tiles);
+    [[nodiscard]] bool render_tiles(const std::vector<const World::Tiles::Tile*>& tiles);
 
     /**
      * Get current rendering mode
@@ -78,7 +78,8 @@ class HexRenderer {
 
    private:
     void determine_rendering_mode();
-    [[nodiscard]] Result<void> render_legacy(std::span<const World::Tiles::Tile* const> tiles);
+    [[nodiscard]] bool render_legacy(const std::vector<const World::Tiles::Tile*>& tiles);
 };
 
-}  // namespace Manifest::Render
+}  // namespace Render
+}  // namespace Manifest

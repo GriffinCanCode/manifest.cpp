@@ -1,20 +1,19 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <new>
 #include <stack>
-#include <type_traits>
 #include <vector>
 
-namespace Manifest {
-namespace Core {
-namespace Memory {
+namespace Manifest::Core::Memory {
 
 template <typename T>
+concept Poolable = std::is_destructible_v<T> && alignof(T) <= alignof(std::max_align_t);
+
+template <Poolable T>
 class Pool {
-    static_assert(std::is_destructible<T>::value, "T must be destructible");
-    static_assert(alignof(T) <= alignof(std::max_align_t), "T alignment too large");
     struct Block {
         alignas(T) std::byte data[sizeof(T)];
     };
@@ -177,6 +176,4 @@ class PoolAllocator {
     bool operator!=(const PoolAllocator& other) const noexcept { return !(*this == other); }
 };
 
-}  // namespace Memory
-}  // namespace Core
-}  // namespace Manifest
+} // namespace Manifest::Core::Memory

@@ -120,7 +120,7 @@ struct TileData {
 
 class Tile {
     TileData data_;
-    std::array<TileId, 6> neighbors_{};
+    std::array<TileId, 6> neighbors_;
 
    public:
     explicit Tile(TileId id, const HexCoordinate& coord) : data_{.id = id, .coordinate = coord} {

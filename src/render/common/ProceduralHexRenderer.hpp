@@ -8,6 +8,8 @@
 #include "../../core/math/Matrix.hpp"
 #include "../../core/math/Vector.hpp"
 #include "../../world/tiles/Tile.hpp"
+#include "../culling/FrustumCuller.hpp"
+#include "../culling/SpatialHash.hpp"
 #include "Renderer.hpp"
 #include "Types.hpp"
 
@@ -15,6 +17,7 @@ namespace Manifest::Render {
 
 using namespace Core::Math;
 using namespace World::Tiles;
+using namespace Culling;
 
 /**
  * Modern GPU-based hex renderer that generates hex meshes procedurally in vertex shaders
@@ -61,6 +64,14 @@ class ProceduralHexRenderer {
     // Renderer reference
     std::unique_ptr<class Renderer> renderer_;
 
+    // Culling system components
+    std::unique_ptr<FrustumCuller> frustum_culler_;
+    std::unique_ptr<SpatialHash> spatial_hash_;
+    
+    // Culling configuration
+    bool culling_enabled_{true};
+    bool spatial_hash_dirty_{true};
+    
     // GPU resources
     BufferHandle instance_buffer_;
     BufferHandle global_uniforms_buffer_;
@@ -73,6 +84,10 @@ class ProceduralHexRenderer {
     std::vector<HexInstance> current_instances_;
     GlobalUniforms global_uniforms_;
     LightingUniforms lighting_uniforms_;
+    
+    // Tile management
+    std::vector<const Tile*> all_tiles_;  // Complete tile set for spatial hash
+    SpatialHash::QueryResult culling_query_result_;  // Reused query result
 
     bool is_initialized_{false};
 
@@ -108,9 +123,22 @@ class ProceduralHexRenderer {
                          float sun_intensity = 1.0f);
 
     /**
-     * Prepare instances for rendering from tile data
+     * Set complete tile dataset for spatial hash optimization
+     * Call this once with all world tiles for efficient culling
      */
-    void prepare_instances(std::span<const Tile* const> tiles);
+    void set_world_tiles(const std::vector<const Tile*>& tiles);
+    
+    /**
+     * Prepare instances for rendering with frustum culling
+     * Uses spatial hash for efficient visibility determination
+     */
+    void prepare_instances_culled();
+    
+    /**
+     * Legacy method: prepare instances from tile data (without culling)
+     * @deprecated Use set_world_tiles() + prepare_instances_culled() for better performance
+     */
+    void prepare_instances(const std::vector<const Tile*>& tiles);
 
     /**
      * Add a single hex instance for rendering
@@ -137,6 +165,29 @@ class ProceduralHexRenderer {
      * Get max supported instances
      */
     [[nodiscard]] static constexpr std::size_t max_instances() { return MAX_INSTANCES; }
+    
+    /**
+     * Culling system management
+     */
+    void enable_culling(bool enabled = true) noexcept { culling_enabled_ = enabled; }
+    [[nodiscard]] bool is_culling_enabled() const noexcept { return culling_enabled_; }
+    
+    /**
+     * Get culling statistics from last frame
+     */
+    [[nodiscard]] std::size_t get_tiles_tested() const noexcept;
+    [[nodiscard]] std::size_t get_tiles_culled() const noexcept;
+    [[nodiscard]] std::size_t get_tiles_rendered() const noexcept;
+    
+    /**
+     * Force spatial hash rebuild (call when world changes)
+     */
+    void invalidate_spatial_hash() noexcept { spatial_hash_dirty_ = true; }
+    
+    /**
+     * Get hex radius for spatial calculations
+     */
+    [[nodiscard]] float get_hex_radius() const noexcept { return global_uniforms_.hex_radius; }
 
    private:
     [[nodiscard]] Result<void> create_shaders();
@@ -145,6 +196,9 @@ class ProceduralHexRenderer {
 
     [[nodiscard]] Result<void> upload_instances();
     [[nodiscard]] Result<void> upload_uniforms();
+    
+    void update_spatial_hash();
+    void ensure_culling_systems();
 
     static Vec4f get_terrain_color(TerrainType terrain, float elevation);
     static Vec3f hex_coord_to_world(const HexCoordinate& coord, float hex_radius = 1.0f);

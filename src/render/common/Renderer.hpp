@@ -5,6 +5,7 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <cstddef>
 
 #include "Types.hpp"
 

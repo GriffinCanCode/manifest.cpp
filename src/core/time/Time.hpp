@@ -1,25 +1,21 @@
 #pragma once
 
-#include <chrono>
-#include <type_traits>
-
 #include "../types/Types.hpp"
+#include <chrono>
+#include <concepts>
 
-namespace Manifest {
-namespace Core {
-namespace Time {
+namespace Manifest::Core::Time {
+
+using namespace Core::Types;
 
 using Clock = std::chrono::high_resolution_clock;
 using Duration = std::chrono::nanoseconds;
 using TimePoint = Clock::time_point;
 
-// SFINAE-based template constraint instead of concept
-template <typename T, typename = void>
-struct is_temporal : std::false_type {};
-
-template <typename T>
-struct is_temporal<T, std::void_t<decltype(std::declval<T>().update(Duration{}))>>
-    : std::true_type {};
+template<typename T>
+concept Temporal = requires(T t) {
+    { t.update(Duration{}) } -> std::same_as<void>;
+};
 
 class GameTime {
     GameTurn current_turn_{0};
@@ -240,6 +236,4 @@ class FixedTimeStep {
     }
 };
 
-}  // namespace Time
-}  // namespace Core
-}  // namespace Manifest
+} // namespace Manifest::Core::Time

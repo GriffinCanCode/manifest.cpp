@@ -1,8 +1,7 @@
-#include <chrono>
-#include <cmath>
-#include <cstddef>
-#include <iomanip>
 #include <iostream>
+#include <chrono>
+#include <format>
+#include <numbers>
 
 #include "core/math/Matrix.hpp"
 #include "core/math/Vector.hpp"
@@ -40,10 +39,10 @@ void demonstrate_strong_types() {
     TileId tile2{43};
     CityId city{100};
 
-    std::cout << "Tile ID 1: " << tile1.value() << "\n";
-    std::cout << "Tile ID 2: " << tile2.value() << "\n";
-    std::cout << "City ID: " << city.value() << "\n";
-    std::cout << "Tile1 < Tile2: " << (tile1 < tile2) << "\n";
+    std::cout << std::format("Tile ID 1: {}\n", tile1.value());
+    std::cout << std::format("Tile ID 2: {}\n", tile2.value());
+    std::cout << std::format("City ID: {}\n", city.value());
+    std::cout << std::format("Tile1 < Tile2: {}\n", tile1 < tile2);
 
     // This would cause a compile error (different types):
     // bool invalid = (tile1 == city);
@@ -51,11 +50,11 @@ void demonstrate_strong_types() {
     Money gold{1000.0};
     Population people{50000.0};
 
-    std::cout << "Gold: " << std::fixed << std::setprecision(2) << gold.value() << "\n";
-    std::cout << "Population: " << static_cast<int>(people.value()) << "\n";
+    std::cout << std::format("Gold: {:.2f}\n", gold.value());
+    std::cout << std::format("Population: {:.0f}\n", people.value());
 
     Money more_gold = gold + Money{500.0};
-    std::cout << "More gold: " << std::fixed << std::setprecision(2) << more_gold.value() << "\n";
+    std::cout << std::format("More gold: {:.2f}\n", more_gold.value());
     std::cout << std::endl;
 }
 

@@ -1,16 +1,14 @@
 #pragma once
 
-#include <cmath>
+#include <concepts>
 #include <memory>
+#include <numbers>
 #include <random>
-#include <type_traits>
 
 #include "../../core/math/Vector.hpp"
 #include "../tiles/Map.hpp"
 
-namespace Manifest {
-namespace World {
-namespace Terrain {
+namespace Manifest::World::Terrain {
 
 using namespace Tiles;
 using namespace Core::Math;
@@ -181,18 +179,12 @@ struct GenerationParams {
     float strategic_rarity{0.08f};
 };
 
-// SFINAE helper for MapLike constraint
-template <typename MapType, typename = void>
-struct is_map_like : std::false_type {};
-
 template <typename MapType>
-struct is_map_like<
-    MapType,
-    std::void_t<decltype(std::declval<MapType&>().create_tile(
-                    std::declval<const HexCoordinate&>())),
-                decltype(std::declval<MapType&>().get_tile(std::declval<TileId>())),
-                decltype(std::declval<MapType&>().update_neighbors(std::declval<TileId>()))>>
-    : std::true_type {};
+concept MapLike = requires(MapType& map, TileId id, const HexCoordinate& coord) {
+    { map.create_tile(coord) } -> std::same_as<TileId>;
+    { map.get_tile(id) } -> std::convertible_to<Tile*>;
+    { map.update_neighbors(id) } -> std::same_as<void>;
+};
 
 class TerrainGenerator {
     GenerationParams params_;
@@ -218,8 +210,8 @@ class TerrainGenerator {
         resource_noise_ = std::make_unique<PerlinNoise>(params.seed + 3);
     }
 
-    template <typename MapType>
-    typename std::enable_if<is_map_like<MapType>::value, void>::type generate_world(MapType& map) {
+    template <MapLike MapType>
+    void generate_world(MapType& map) {
         // Generate base terrain
         generate_elevation(map);
         generate_climate(map);
@@ -231,9 +223,8 @@ class TerrainGenerator {
     }
 
    private:
-    template <typename MapType>
-    typename std::enable_if<is_map_like<MapType>::value, void>::type generate_elevation(
-        MapType& map) {
+    template <MapLike MapType>
+    void generate_elevation(MapType& map) {
         for (std::int32_t q = -params_.map_radius; q <= params_.map_radius; ++q) {
             std::int32_t r1 = std::max(-params_.map_radius, -q - params_.map_radius);
             std::int32_t r2 = std::min(params_.map_radius, -q + params_.map_radius);
