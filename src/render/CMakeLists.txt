@@ -1,6 +1,7 @@
 # Include subdirectories
 add_subdirectory(culling)
 add_subdirectory(passes)
+add_subdirectory(camera)
 
 set(RENDER_SOURCES
     common/Types.hpp
@@ -62,6 +63,7 @@ target_link_libraries(render
         core
         culling
         ManifestRenderPasses
+        camera
         ${OPENGL_LIBRARIES}
         glfw
     PRIVATE

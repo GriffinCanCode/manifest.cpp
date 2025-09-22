@@ -1,4 +1,5 @@
 #include "MainPass.hpp"
+#include "../../core/log/Log.hpp"
 
 #include <cstring>
 #include <span>
@@ -9,8 +10,14 @@ namespace Manifest {
 namespace Render {
 namespace Passes {
 
+// Module-specific logger for main rendering pass
+MODULE_LOGGER("MainPass");
+
 Result<void> MainPass::initialize(Renderer* renderer) {
+    logger_->info("Initializing main rendering pass");
+    
     if (!renderer) {
+        logger_->error("Cannot initialize MainPass: renderer is null");
         return RendererError::InvalidState;
     }
 
@@ -23,19 +30,26 @@ Result<void> MainPass::initialize(Renderer* renderer) {
     // For now, this is a design placeholder
 
     // Create main pass resources
+    logger_->debug("Creating main pass resources");
     if (auto result = create_main_resources(); !result) {
+        logger_->error("Failed to create main pass resources");
         return result;
     }
 
+    logger_->debug("Creating main pass shaders");
     if (auto result = create_main_shaders(); !result) {
+        logger_->error("Failed to create main pass shaders");
         return result;
     }
 
+    logger_->debug("Creating main pass pipeline");
     if (auto result = create_main_pipeline(); !result) {
+        logger_->error("Failed to create main pass pipeline");
         return result;
     }
 
     is_initialized_ = true;
+    logger_->info("Main rendering pass initialized successfully");
     return {};
 }
 
@@ -65,14 +79,19 @@ void MainPass::shutdown() {
 
 Result<void> MainPass::execute(const PassContext& context) {
     if (!is_initialized_) {
+        logger_->error("Cannot execute MainPass: not initialized");
         return RendererError::InvalidState;
     }
 
+    SCOPED_LOGGER_TRACE(*logger_, "Executing main pass - frame {}", context.frame_number);
+
     // Update uniforms with current frame data
+    logger_->trace("Updating uniforms for frame {}", context.frame_number);
     update_uniforms(context);
 
     // Upload uniforms to GPU
     if (auto result = upload_uniforms(); !result) {
+        logger_->error("Failed to upload uniforms to GPU");
         return result;
     }
 
@@ -94,6 +113,7 @@ Result<void> MainPass::execute(const PassContext& context) {
 
     // Use hex renderer for actual geometry rendering
     if (hex_renderer_) {
+        logger_->trace("Updating hex renderer globals and lighting");
         // Update hex renderer with current camera settings
         hex_renderer_->update_globals(context.view_projection_matrix, context.camera_position,
                                       context.elapsed_time);
@@ -101,10 +121,14 @@ Result<void> MainPass::execute(const PassContext& context) {
                                        context.ambient_color, context.sun_intensity);
 
         // Render hex geometry
+        logger_->trace("Rendering hex geometry");
         if (auto result = hex_renderer_->render(); !result) {
+            logger_->error("Failed to render hex geometry");
             renderer_->end_render_pass();
             return result;
         }
+    } else {
+        logger_->warn("No hex renderer available for geometry rendering");
     }
 
     renderer_->end_render_pass();

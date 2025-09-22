@@ -105,9 +105,9 @@ public:
     static inline auto logger_ = ::Manifest::Core::Log::Registry::create(name)
 
 #define SCOPED_LOGGER_TRACE(logger, ...) \
-    if constexpr (::Manifest::Core::Log::should_log<::Manifest::Core::Log::Level::Trace>((logger).get_level())) \
-        (logger).trace(__VA_ARGS__)
+    do { if ((logger).should_log(::Manifest::Core::Log::Level::Trace)) \
+        (logger).trace(__VA_ARGS__); } while(0)
 
 #define SCOPED_LOGGER_DEBUG(logger, ...) \
-    if constexpr (::Manifest::Core::Log::should_log<::Manifest::Core::Log::Level::Debug>((logger).get_level())) \
-        (logger).debug(__VA_ARGS__)
+    do { if ((logger).should_log(::Manifest::Core::Log::Level::Debug)) \
+        (logger).debug(__VA_ARGS__); } while(0)

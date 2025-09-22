@@ -1,30 +1,42 @@
 #include "Manager.hpp"
+#include "../../core/log/Log.hpp"
 #include <algorithm>
 
 namespace Manifest {
 namespace UI {
 namespace Window {
 
+// Module-specific logger for window management
+MODULE_LOGGER("WindowManager");
+
 Result<void> Manager::initialize(const FactoryConfig& config) {
+    logger_->info("Initializing window manager");
+                  
     if (factory_) {
+        logger_->debug("Shutting down existing factory before reinitialization");
         shutdown();
     }
     
     auto factory_result = create_window_factory(config);
     if (!factory_result) {
+        logger_->error("Failed to create window factory");
         return factory_result.error();
     }
     
     factory_ = std::move(*factory_result);
+    logger_->info("Window manager initialized successfully");
     return {};
 }
 
 void Manager::shutdown() {
+    logger_->info("Shutting down window manager ({} windows)", windows_.size());
+    
     destroy_all_windows();
     
     if (factory_) {
         factory_->shutdown();
         factory_.reset();
+        logger_->debug("Window factory shutdown complete");
     }
     
     next_handle_ = WindowHandle{1};
@@ -34,18 +46,23 @@ void Manager::shutdown() {
 
 Result<WindowHandle> Manager::create_window(const WindowDesc& desc) {
     if (!factory_) {
+        logger_->error("Cannot create window: factory not initialized");
         return WindowError::InvalidState;
     }
+    
+    logger_->info("Creating window: '{}' ({}x{})", desc.title, desc.size.x(), desc.size.y());
     
     // Create window
     auto window_result = factory_->create_window(desc);
     if (!window_result) {
+        logger_->error("Failed to create window: '{}'", desc.title);
         return window_result.error();
     }
     
     // Create event system
     auto event_system_result = factory_->create_event_system();
     if (!event_system_result) {
+        logger_->error("Failed to create event system for window: '{}'", desc.title);
         return WindowError::InitializationFailed;
     }
     
@@ -56,11 +73,13 @@ Result<WindowHandle> Manager::create_window(const WindowDesc& desc) {
     // Set first window as primary
     if (windows_.size() == 1) {
         primary_window_ = handle;
+        logger_->debug("Set window '{}' as primary window (handle: {})", desc.title, handle.value());
     }
     
     // Setup event forwarding
     setup_window_events(handle);
     
+    logger_->info("Window created successfully (handle: {})", handle.value());
     return handle;
 }
 

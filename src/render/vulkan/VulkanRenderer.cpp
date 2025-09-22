@@ -1,4 +1,5 @@
 #include "VulkanRenderer.hpp"
+#include "../../core/log/Log.hpp"
 #include <iostream>
 #include <cstdlib>
 
@@ -17,36 +18,49 @@ namespace Manifest {
 namespace Render {
 namespace Vulkan {
 
+// Module-specific logger for Vulkan renderer
+MODULE_LOGGER("VulkanRenderer");
+
 // Import specific modern C++ compatibility types (avoiding Result conflict) 
 using Core::Modern::span;
 using Core::Modern::byte;
 
 Result<void> VulkanRenderer::initialize() {
     try {
-        std::cout << "Initializing Vulkan renderer..." << std::endl;
+        logger_->info("Initializing Vulkan renderer...");
         
         // Create Vulkan instance
+        logger_->debug("Creating Vulkan instance");
         if (!create_instance()) {
+            logger_->error("Failed to create Vulkan instance");
             return RendererError::InitializationFailed;
         }
         
         // Select physical device
+        logger_->debug("Selecting physical device");
         if (!select_physical_device()) {
+            logger_->error("Failed to select suitable physical device");
             return RendererError::InitializationFailed;
         }
         
         // Create logical device
+        logger_->debug("Creating logical device");
         if (!create_logical_device()) {
+            logger_->error("Failed to create logical device");
             return RendererError::InitializationFailed;
         }
         
         // Create memory allocators
+        logger_->debug("Creating memory allocators");
         if (!create_allocators()) {
+            logger_->error("Failed to create memory allocators");
             return RendererError::InitializationFailed;
         }
         
         // Create resource managers
+        logger_->debug("Creating resource managers");
         if (!create_resource_managers()) {
+            logger_->error("Failed to create resource managers");
             return RendererError::InitializationFailed;
         }
         
@@ -54,16 +68,18 @@ Result<void> VulkanRenderer::initialize() {
         // Window integration available via UI::Window::Integration namespace
         
         initialized_ = true;
-        std::cout << "Vulkan renderer initialized successfully" << std::endl;
+        logger_->info("Vulkan renderer initialized successfully");
         return {};
     } catch (const std::exception& e) {
-        std::cerr << "Failed to initialize Vulkan renderer: " << e.what() << std::endl;
+        logger_->fatal("Failed to initialize Vulkan renderer: {}", e.what());
         return RendererError::InitializationFailed;
     }
 }
 
 void VulkanRenderer::shutdown() {
     if (!initialized_) return;
+    
+    logger_->info("Shutting down Vulkan renderer");
     
     std::cout << "Shutting down Vulkan renderer..." << std::endl;
     
@@ -394,7 +410,7 @@ bool VulkanRenderer::create_allocators() {
     allocator_info.instance = instance_->get();
     
     if (vmaCreateAllocator(&allocator_info, &vma_allocator_) != VK_SUCCESS) {
-        std::cerr << "Failed to create VMA allocator" << std::endl;
+        logger_->error("Failed to create VMA allocator");
         return false;
     }
     

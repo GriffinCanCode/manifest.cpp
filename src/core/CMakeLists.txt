@@ -6,6 +6,7 @@ add_library(core STATIC
     math/Vector.hpp
     math/Matrix.hpp
     time/Time.hpp
+    graphics/Camera.hpp
 )
 
 target_include_directories(core 

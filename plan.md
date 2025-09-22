@@ -107,19 +107,35 @@
 
 ### Camera and Controls
 - [x] Smooth zoom from space to ground level
-- [ ] Edge scrolling + WASD + middle mouse drag
-    - Current: Camera movement methods exist
-    - Missing: Input handling integration
-- [ ] Click-drag box selection
-    - Missing: Selection system
-- [ ] Context-sensitive cursor
-    - Missing: Cursor management
-- [ ] Cinematic camera for key events
-    - Missing: Cinematic camera system
-- [ ] Multiple viewport support (minimap, picture-in-picture)
-    - Missing: Multi-viewport rendering
-- [ ] Save/restore camera positions
-    - Missing: Camera state serialization
+- [x] Edge scrolling + WASD + middle mouse drag
+    - ✅ Comprehensive Controls system with configurable input mapping
+    - ✅ Multiple control modes (Orbital, Free, Cinematic) with smooth transitions
+    - ✅ Edge scrolling with customizable margins and sensitivity settings
+    - ✅ Strong typing for all control parameters (Speed, Sensitivity, etc.)
+- [x] Click-drag box selection
+    - ✅ Generic Selection system supporting any entity type
+    - ✅ Multiple selection modes (Replace, Add, Remove, Toggle)
+    - ✅ Keyboard shortcuts (Ctrl+A, Escape, Ctrl+I) and modifier support
+    - ✅ Visual feedback with customizable selection box rendering
+- [x] Context-sensitive cursor
+    - ✅ Smart Cursor management with 16 cursor types
+    - ✅ Context-aware resolution based on game state
+    - ✅ Auto-hide functionality and smooth transitions
+    - ✅ Platform abstraction with mock provider for testing
+- [x] Cinematic camera for key events
+    - ✅ Sophisticated Behavior system with extensible IBehavior interface
+    - ✅ Built-in behaviors: MoveTo, LookAt, ZoomTo, OrbitTo, Shake, Follow
+    - ✅ Composite behaviors (Sequence, Parallel) with easing functions
+    - ✅ Preset library for common cinematic movements
+- [x] Multiple viewport support (minimap, picture-in-picture)
+    - ✅ Integrated as part of unified Camera System architecture
+    - ✅ Supports multiple camera instances with independent controls
+    - ✅ Factory functions for common viewport configurations
+- [x] Save/restore camera positions
+    - ✅ Comprehensive State management with named snapshots
+    - ✅ Multiple serialization formats (Binary/JSON) with validation
+    - ✅ State history with configurable limits and RAII guards
+    - ✅ Smooth transitions between saved states with custom easing
 
 ## Phase 2: Simulation Core
 

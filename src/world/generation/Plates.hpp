@@ -40,32 +40,48 @@ class PlateSystem {
     explicit PlateSystem(std::uint32_t seed = 42) : rng_{seed} {}
 
     void generate_plates(TileMap& map, std::size_t plate_count = 8) {
+        MODULE_LOGGER("PlateSystem");
+        
+        logger_->debug("Generating {} tectonic plates for {} tiles", plate_count, map.size());
         plates_.clear();
         tile_to_plate_.clear();
 
         // Create initial plate centers using Poisson disk sampling
+        logger_->trace("Generating plate centers using Poisson disk sampling");
         auto centers = generate_plate_centers(map, plate_count);
 
         // Initialize plates
+        logger_->trace("Creating {} plates from centers", centers.size());
         for (const auto& center : centers) {
             create_plate(center);
         }
 
         // Assign tiles to plates using Voronoi regions
+        logger_->trace("Assigning tiles to plates using Voronoi regions");
         assign_tiles_to_plates(map);
 
         // Set plate velocities and types
+        logger_->trace("Initializing plate dynamics and velocities");
         initialize_plate_dynamics();
+        
+        logger_->debug("Plate generation completed: {} plates created", plates_.size());
     }
 
     void simulate_tectonics(TileMap& map, float time_step = 1.0f) {
+        MODULE_LOGGER("PlateSystem");
+        
+        SCOPED_LOGGER_TRACE(*logger_, "Simulating tectonics: time_step={}", time_step);
+        
         // Move plates
+        logger_->trace("Moving {} plates", plates_.size());
         move_plates(time_step);
 
         // Handle plate interactions
+        logger_->trace("Processing plate boundary interactions");
         process_plate_boundaries(map);
 
         // Update terrain based on tectonics
+        logger_->trace("Applying tectonic effects to terrain");
         apply_tectonic_effects(map);
     }
 

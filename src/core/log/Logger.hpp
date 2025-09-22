@@ -8,7 +8,6 @@
 #include <string>
 #include <string_view>
 #include <atomic>
-#include <format>
 #include <sstream>
 
 namespace Manifest {
@@ -21,6 +20,28 @@ private:
     std::string name_;
     std::atomic<Level> level_;
     std::shared_ptr<Sink> sink_;
+
+    // Simple formatting helper - replaces {} with arguments
+    template<typename T>
+    void format_recursive(std::ostringstream& oss, std::string_view format, T&& value) const {
+        auto pos = format.find("{}");
+        if (pos != std::string_view::npos) {
+            oss << format.substr(0, pos) << std::forward<T>(value) << format.substr(pos + 2);
+        } else {
+            oss << format;
+        }
+    }
+
+    template<typename T, typename... Args>
+    void format_recursive(std::ostringstream& oss, std::string_view format, T&& value, Args&&... args) const {
+        auto pos = format.find("{}");
+        if (pos != std::string_view::npos) {
+            oss << format.substr(0, pos) << std::forward<T>(value);
+            format_recursive(oss, format.substr(pos + 2), std::forward<Args>(args)...);
+        } else {
+            oss << format;
+        }
+    }
 
 public:
     explicit Logger(std::string name, 
@@ -37,14 +58,10 @@ public:
         
         std::string formatted_msg;
         if constexpr (sizeof...(args) > 0) {
-            try {
-                formatted_msg = std::format(std::string{msg}, std::forward<Args>(args)...);
-            } catch (...) {
-                // Fallback to simple string stream formatting if std::format fails
-                std::ostringstream oss;
-                oss << msg;
-                formatted_msg = oss.str();
-            }
+            // Simple printf-style formatting - can be enhanced later
+            std::ostringstream oss;
+            format_recursive(oss, msg, std::forward<Args>(args)...);
+            formatted_msg = oss.str();
         } else {
             formatted_msg = std::string{msg};
         }

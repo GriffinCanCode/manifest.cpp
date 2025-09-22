@@ -331,20 +331,34 @@ public:
 
     template <typename MapType>
     void simulate(MapType& map, std::size_t iterations = 10) {
+        MODULE_LOGGER("RainfallSystem");
+        
+        logger_->debug("Starting rainfall simulation: {} iterations for {} tiles", 
+                      iterations, map.size());
+        
         // Initialize atmospheric systems
+        logger_->trace("Generating pressure systems");
         atmosphere_.generate_pressure_systems();
+        logger_->trace("Initializing atmospheric data");
         initialize_atmospheric_data(map);
 
         // Run simulation iterations
+        logger_->debug("Running atmospheric simulation iterations");
 #pragma unroll 8
         for (std::size_t i = 0; i < iterations; ++i) {
             update_atmospheric_data(map);
             calculate_precipitation_for_map(map);
             atmosphere_.update(0.1F);
+            
+            if ((i + 1) % 5 == 0) {
+                logger_->trace("Rainfall simulation progress: {}/{} iterations", i + 1, iterations);
+            }
         }
 
         // Apply final rainfall values to tiles
+        logger_->trace("Applying final rainfall values to map tiles");
         apply_rainfall_to_tiles(map);
+        logger_->debug("Rainfall simulation completed successfully");
     }
 
 private:

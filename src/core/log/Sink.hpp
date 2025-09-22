@@ -100,7 +100,8 @@ public:
 private:
     void open_file() {
         file_stream_.open(base_filename_, std::ios::app);
-        current_size_ = file_stream_.tellp();
+        auto pos = file_stream_.tellp();
+        current_size_ = pos >= 0 ? static_cast<std::size_t>(pos) : 0;
     }
     
     void rotate_file() {

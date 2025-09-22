@@ -73,7 +73,7 @@ void demonstrate_sink_configurations() {
         multi_sink->add_sink(std::make_shared<ConsoleSink>(false)); // No colors for clarity
         multi_sink->add_sink(std::make_shared<FileSink>("multi_logs.txt"));
         
-        auto logger = Registry::create("MultiDemo", multi_sink);
+        auto logger = Registry::create("MultiDemo", std::dynamic_pointer_cast<Sink>(multi_sink));
         logger->info("This message goes to both console and file");
     }
 }

@@ -1,4 +1,5 @@
 #include "VkCore.hpp"
+#include "../../core/log/Log.hpp"
 #include <iostream>
 #include <set>
 #include <algorithm>
@@ -14,6 +15,9 @@
 namespace Manifest {
 namespace Render {
 namespace Vulkan {
+
+// Module-specific logger for Vulkan core
+MODULE_LOGGER("VulkanCore");
 
 // Import modern compatibility types  
 using namespace Core::Modern;
@@ -37,14 +41,16 @@ bool Instance::create(const std::vector<const char*>& extensions,
         create_info.ppEnabledLayerNames = layers.data();
 
         instance_ = vk::createInstanceUnique(create_info).value;
+        logger_->info("Vulkan instance created successfully");
         
         if (!layers.empty()) {
+            logger_->debug("Setting up debug messenger with {} validation layers", layers.size());
             setup_debug_messenger();
         }
         
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "Failed to create Vulkan instance: " << e.what() << std::endl;
+        logger_->error("Failed to create Vulkan instance: {}", e.what());
         return false;
     }
 }
@@ -64,10 +70,10 @@ bool Instance::setup_debug_messenger() {
         create_info.pfnUserCallback = nullptr;
 
         debug_messenger_ = instance_->createDebugUtilsMessengerEXTUnique(create_info).value;
+        logger_->debug("Debug messenger setup successfully");
         return true;
     } catch (const std::exception& e) {
-        // Note: Would use LOG_ERROR here but avoiding include dependencies for now
-        std::cerr << "Failed to setup debug messenger: " << e.what() << std::endl;
+        logger_->warn("Failed to setup debug messenger: {}", e.what());
         return false;
     }
 }
