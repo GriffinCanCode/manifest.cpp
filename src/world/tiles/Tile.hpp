@@ -2,14 +2,26 @@
 
 #include <array>
 #include <bitset>
+#include <memory>
+#include <optional>
 
 #include "../../core/types/Types.hpp"
+#include "../generation/Climate.hpp"
 
 namespace Manifest {
 namespace World {
 namespace Tiles {
 
-using namespace Core::Types;
+using Core::Types::TileId;
+using Core::Types::NationId;
+using Core::Types::CityId;
+using Core::Types::HexCoordinate;
+using Core::Types::Direction;
+using Core::Types::Production;
+using Core::Types::Money;
+using Core::Types::Layer;
+using Core::Types::Influence;
+using Core::Types::GameTurn;
 
 // Terrain types
 enum class TerrainType : std::uint8_t {
@@ -76,6 +88,12 @@ enum class Feature : std::uint8_t {
 // Tile properties using bitset for memory efficiency
 using Features = std::bitset<16>;
 
+// Forward declarations for new systems
+class TileCulture;
+class TileOwnership;
+class LayeredTile;
+class SupplyNetwork;
+
 struct TileData {
     TileId id{TileId::invalid()};
     HexCoordinate coordinate{};
@@ -101,6 +119,7 @@ struct TileData {
     std::uint8_t rainfall{};
     std::uint8_t temperature{};
     std::uint8_t fertility{};
+    Generation::ClimateZone climate_zone{Generation::ClimateZone::TropicalRainforest};
 
     // State flags
     bool explored{false};
@@ -112,6 +131,7 @@ struct TileData {
                resource == other.resource && improvement == other.improvement &&
                features == other.features && elevation == other.elevation &&
                rainfall == other.rainfall && temperature == other.temperature &&
+               climate_zone == other.climate_zone &&
                explored == other.explored && visible == other.visible && passable == other.passable;
     }
 
@@ -121,11 +141,23 @@ struct TileData {
 class Tile {
     TileData data_;
     std::array<TileId, 6> neighbors_;
+    
+    // New integrated systems
+    std::unique_ptr<TileCulture> culture_;
+    std::unique_ptr<TileOwnership> ownership_;
+    std::unique_ptr<LayeredTile> layers_;
+    
+    // Supply chain integration point
+    static SupplyNetwork* supply_network_;
 
    public:
-    explicit Tile(TileId id, const HexCoordinate& coord) : data_{.id = id, .coordinate = coord} {
+    explicit Tile(TileId tile_id, const HexCoordinate& coord) 
+        : data_{.id = tile_id, .coordinate = coord} {
         neighbors_.fill(TileId::invalid());
         calculate_base_yields();
+        
+        // Initialize integrated systems lazily when needed
+        // This saves memory for tiles that don't use advanced features
     }
 
     // Basic accessors
@@ -192,6 +224,9 @@ class Tile {
     std::uint8_t fertility() const noexcept { return data_.fertility; }
     void set_fertility(std::uint8_t fertility) noexcept { data_.fertility = fertility; }
 
+    Generation::ClimateZone climate_zone() const noexcept { return data_.climate_zone; }
+    void set_climate_zone(Generation::ClimateZone zone) noexcept { data_.climate_zone = zone; }
+
     // Visibility and exploration
     bool is_explored() const noexcept { return data_.explored; }
     void set_explored(bool explored = true) noexcept { data_.explored = explored; }
@@ -219,20 +254,11 @@ class Tile {
 
     bool is_land() const noexcept { return !is_water(); }
 
-    bool can_build_improvement(ImprovementType improvement) const noexcept {
-        // Basic rules - would be expanded with more complex logic
-        switch (improvement) {
-            case ImprovementType::Farm:
-                return is_land() && data_.terrain != TerrainType::Mountains;
-            case ImprovementType::Mine:
-                return data_.terrain == TerrainType::Hills ||
-                       data_.terrain == TerrainType::Mountains;
-            case ImprovementType::FishingBoats:
-                return is_water();
-            default:
-                return is_land();
-        }
-    }
+    // Use rule-based improvement system
+    bool can_build_improvement(ImprovementType improvement) const noexcept;
+    
+    // Get available improvements for this tile
+    std::vector<ImprovementType> available_improvements() const;
 
     float movement_cost() const noexcept {
         float cost = 1.0f;
@@ -260,6 +286,37 @@ class Tile {
         return cost;
     }
 
+    // Layer system integration
+    bool has_layer(Layer layer) const noexcept;
+    void add_layer(Layer layer, std::uint8_t density = 128, std::uint8_t accessibility = 0);
+    void remove_layer(Layer layer) noexcept;
+    float movement_cost_to_layer(Layer from, Layer to) const noexcept;
+    bool can_build_at_layer(Layer layer, ImprovementType improvement) const noexcept;
+    
+    // Cultural system integration  
+    TileCulture* culture() const noexcept { return culture_.get(); }
+    void ensure_culture();
+    void add_cultural_influence(NationId nation, std::uint8_t trait, Influence strength);
+    NationId dominant_culture() const noexcept;
+    bool is_culturally_contested() const noexcept;
+    
+    // Ownership system integration
+    TileOwnership* ownership() const noexcept { return ownership_.get(); }
+    void ensure_ownership();
+    void add_ownership_claim(NationId nation, std::uint8_t claim_type, Influence strength);
+    bool has_claim(NationId nation) const noexcept;
+    bool is_contested() const noexcept;
+    float influence_ratio(NationId nation) const noexcept;
+    
+    // Supply system integration
+    static void set_supply_network(SupplyNetwork* network) noexcept { supply_network_ = network; }
+    void add_as_producer(std::uint8_t resource_type, Production capacity);
+    void add_as_consumer(std::uint8_t resource_type, Production demand);
+    void add_as_storage(std::uint8_t resource_type, Production capacity);
+    
+    // Update systems
+    void update(GameTurn current_turn);
+    
     // Serialization support
     const TileData& data() const noexcept { return data_; }
     void set_data(const TileData& data) noexcept {
@@ -268,6 +325,8 @@ class Tile {
     }
 
    private:
+    void ensure_layers();
+    
     void calculate_base_yields() noexcept {
         // Reset yields
         data_.food_yield = Production{0.0};
