@@ -7,11 +7,13 @@
 
 #include "../../core/math/Vector.hpp"
 #include "../tiles/Map.hpp"
+#include "../generation/Noise.hpp"
 
 namespace Manifest::World::Terrain {
 
 using namespace Tiles;
 using namespace Core::Math;
+using namespace Generation;
 
 // Helper type trait to check if a type is map-like
 template <typename T>
@@ -24,149 +26,10 @@ constexpr bool is_map_like_v = is_map_like<T>::value;
 template <>
 struct is_map_like<Tiles::TileMap> : std::true_type {};
 
-// Noise interface for procedural generation
-class NoiseGenerator {
-   public:
-    virtual ~NoiseGenerator() = default;
-    virtual float sample(float x, float y) const = 0;
-    virtual float sample(float x, float y, float z) const = 0;
-};
-
-// Simple Perlin-style noise implementation
-class PerlinNoise : public NoiseGenerator {
-    std::vector<int> permutation_;
-
-    float fade(float t) const noexcept { return t * t * t * (t * (t * 6 - 15) + 10); }
-
-    float lerp(float t, float a, float b) const noexcept { return a + t * (b - a); }
-
-    float grad(int hash, float x, float y) const noexcept {
-        int h = hash & 15;
-        float u = h < 8 ? x : y;
-        float v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
-        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-    }
-
-    float grad(int hash, float x, float y, float z) const noexcept {
-        int h = hash & 15;
-        float u = h < 8 ? x : y;
-        float v = h < 4 ? y : h == 12 || h == 14 ? x : z;
-        return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
-    }
-
-   public:
-    explicit PerlinNoise(std::uint32_t seed = 0) {
-        permutation_.resize(512);
-        std::iota(permutation_.begin(), permutation_.begin() + 256, 0);
-
-        std::mt19937 rng(seed);
-        std::shuffle(permutation_.begin(), permutation_.begin() + 256, rng);
-
-        // Duplicate for easy wrapping
-        std::copy_n(permutation_.begin(), 256, permutation_.begin() + 256);
-    }
-
-    float sample(float x, float y) const override {
-        int X = static_cast<int>(std::floor(x)) & 255;
-        int Y = static_cast<int>(std::floor(y)) & 255;
-
-        x -= std::floor(x);
-        y -= std::floor(y);
-
-        float u = fade(x);
-        float v = fade(y);
-
-        int A = permutation_[static_cast<std::size_t>(X)] + Y;
-        int B = permutation_[static_cast<std::size_t>(X + 1)] + Y;
-
-        return lerp(
-            v, lerp(u, grad(permutation_[static_cast<std::size_t>(A)], x, y), 
-                       grad(permutation_[static_cast<std::size_t>(B)], x - 1, y)),
-            lerp(u, grad(permutation_[static_cast<std::size_t>(A + 1)], x, y - 1), 
-                    grad(permutation_[static_cast<std::size_t>(B + 1)], x - 1, y - 1)));
-    }
-
-    float sample(float x, float y, float z) const override {
-        int X = static_cast<int>(std::floor(x)) & 255;
-        int Y = static_cast<int>(std::floor(y)) & 255;
-        int Z = static_cast<int>(std::floor(z)) & 255;
-
-        x -= std::floor(x);
-        y -= std::floor(y);
-        z -= std::floor(z);
-
-        float u = fade(x);
-        float v = fade(y);
-        float w = fade(z);
-
-        int A = permutation_[static_cast<std::size_t>(X)] + Y;
-        int AA = permutation_[static_cast<std::size_t>(A)] + Z;
-        int AB = permutation_[static_cast<std::size_t>(A + 1)] + Z;
-        int B = permutation_[static_cast<std::size_t>(X + 1)] + Y;
-        int BA = permutation_[static_cast<std::size_t>(B)] + Z;
-        int BB = permutation_[static_cast<std::size_t>(B + 1)] + Z;
-
-        return lerp(
-            w,
-            lerp(v, lerp(u, grad(permutation_[static_cast<std::size_t>(AA)], x, y, z), 
-                              grad(permutation_[static_cast<std::size_t>(BA)], x - 1, y, z)),
-                 lerp(u, grad(permutation_[static_cast<std::size_t>(AB)], x, y - 1, z),
-                      grad(permutation_[static_cast<std::size_t>(BB)], x - 1, y - 1, z))),
-            lerp(v,
-                 lerp(u, grad(permutation_[static_cast<std::size_t>(AA + 1)], x, y, z - 1),
-                      grad(permutation_[static_cast<std::size_t>(BA + 1)], x - 1, y, z - 1)),
-                 lerp(u, grad(permutation_[static_cast<std::size_t>(AB + 1)], x, y - 1, z - 1),
-                      grad(permutation_[static_cast<std::size_t>(BB + 1)], x - 1, y - 1, z - 1))));
-    }
-};
-
-// Multi-octave noise generator
-class FractalNoise : public NoiseGenerator {
-    std::unique_ptr<NoiseGenerator> base_noise_;
-    int octaves_;
-    float persistence_;
-    float frequency_;
-
-   public:
-    FractalNoise(std::unique_ptr<NoiseGenerator> base_noise, int octaves = 4,
-                 float persistence = 0.5f, float frequency = 1.0f)
-        : base_noise_{std::move(base_noise)},
-          octaves_{octaves},
-          persistence_{persistence},
-          frequency_{frequency} {}
-
-    float sample(float x, float y) const override {
-        float value = 0.0f;
-        float amplitude = 1.0f;
-        float freq = frequency_;
-        float max_value = 0.0f;
-
-        for (int i = 0; i < octaves_; ++i) {
-            value += base_noise_->sample(x * freq, y * freq) * amplitude;
-            max_value += amplitude;
-            amplitude *= persistence_;
-            freq *= 2.0f;
-        }
-
-        return value / max_value;
-    }
-
-    float sample(float x, float y, float z) const override {
-        float value = 0.0f;
-        float amplitude = 1.0f;
-        float freq = frequency_;
-        float max_value = 0.0f;
-
-        for (int i = 0; i < octaves_; ++i) {
-            value += base_noise_->sample(x * freq, y * freq, z * freq) * amplitude;
-            max_value += amplitude;
-            amplitude *= persistence_;
-            freq *= 2.0f;
-        }
-
-        return value / max_value;
-    }
-};
+// Legacy type aliases for compatibility
+using NoiseGenerator = Noise;
+using PerlinNoise = Perlin;
+using FractalNoise = Fractal;
 
 // Terrain generation parameters
 struct GenerationParams {
@@ -211,17 +74,21 @@ class TerrainGenerator {
    public:
     explicit TerrainGenerator(const GenerationParams& params = {})
         : params_{params}, rng_{params.seed} {
-        // Create noise generators with different seeds
-        elevation_noise_ = std::make_unique<FractalNoise>(
-            std::make_unique<PerlinNoise>(params.seed), 6, 0.6f, params.continent_frequency);
+        // Create noise generators with different seeds using new system
+        elevation_noise_ = std::make_unique<Continent>(
+            std::make_unique<Fractal>(std::make_unique<Perlin>(params.seed), 6, 
+                Persistence{0.6F}, Lacunarity{2.0F}),
+            std::make_unique<Fractal>(std::make_unique<Perlin>(params.seed + 10), 4),
+            ContinentShape::Pangaea, params.sea_level, Vec2f{0.0F, 0.0F}, 
+            static_cast<float>(params.map_radius));
 
-        temperature_noise_ = std::make_unique<FractalNoise>(
-            std::make_unique<PerlinNoise>(params.seed + 1), 3, 0.5f, 0.01f);
+        temperature_noise_ = std::make_unique<Fractal>(
+            std::make_unique<Perlin>(params.seed + 1), 3, Persistence{0.5F});
 
-        rainfall_noise_ = std::make_unique<FractalNoise>(
-            std::make_unique<PerlinNoise>(params.seed + 2), 4, 0.5f, params.rainfall_frequency);
+        rainfall_noise_ = std::make_unique<Fractal>(
+            std::make_unique<Perlin>(params.seed + 2), 4, Persistence{0.5F});
 
-        resource_noise_ = std::make_unique<PerlinNoise>(params.seed + 3);
+        resource_noise_ = std::make_unique<Perlin>(params.seed + 3);
     }
 
     template <MapLike MapType>
