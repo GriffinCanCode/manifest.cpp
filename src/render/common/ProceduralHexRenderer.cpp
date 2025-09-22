@@ -15,7 +15,7 @@ namespace Manifest::Render {
 
 Result<void> ProceduralHexRenderer::initialize(std::unique_ptr<Renderer> renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = std::move(renderer);
@@ -86,7 +86,9 @@ void ProceduralHexRenderer::update_globals(const Mat4f& view_proj, const Vec3f& 
 
 void ProceduralHexRenderer::update_lighting(const Vec3f& sun_dir, const Vec3f& sun_color,
                                             const Vec3f& ambient_color, float sun_intensity) {
-    lighting_uniforms_.sun_direction = sun_dir.normalize();
+    Vec3f normalized_sun_dir = sun_dir;
+    normalized_sun_dir.normalize();
+    lighting_uniforms_.sun_direction = normalized_sun_dir;
     lighting_uniforms_.sun_color = sun_color;
     lighting_uniforms_.ambient_color = ambient_color;
     lighting_uniforms_.sun_intensity = sun_intensity;
@@ -124,7 +126,7 @@ void ProceduralHexRenderer::prepare_instances_culled() {
         
         // Estimate instance count for better performance
         std::size_t visible_count = culling_query_result_.total_visible();
-        current_instances_.reserve(std::min(visible_count, MAX_INSTANCES));
+        current_instances_.reserve(std::min(static_cast<std::uint32_t>(visible_count), MAX_INSTANCES));
         
         // Convert visible tiles to instances
         auto process_tiles = [this](const std::vector<const Tile*>& tiles) {
@@ -155,7 +157,7 @@ void ProceduralHexRenderer::prepare_instances_culled() {
 
 void ProceduralHexRenderer::prepare_instances(const std::vector<const Tile*>& tiles) {
     current_instances_.clear();
-    current_instances_.reserve(std::min(tiles.size(), MAX_INSTANCES));
+    current_instances_.reserve(std::min(static_cast<std::uint32_t>(tiles.size()), MAX_INSTANCES));
 
     for (const Tile* tile : tiles) {
         if (!tile || current_instances_.size() >= MAX_INSTANCES) {
@@ -232,7 +234,7 @@ Result<void> ProceduralHexRenderer::create_shaders() {
     std::filesystem::path shader_dir = "assets/shaders";
     std::ifstream vert_file(shader_dir / "hex_procedural.vert");
     if (!vert_file) {
-        return std::unexpected(RendererError::CompilationFailed);
+        return RendererError::CompilationFailed;
     }
 
     std::stringstream vert_buffer;
@@ -242,7 +244,7 @@ Result<void> ProceduralHexRenderer::create_shaders() {
     // Load fragment shader
     std::ifstream frag_file(shader_dir / "hex_procedural.frag");
     if (!frag_file) {
-        return std::unexpected(RendererError::CompilationFailed);
+        return RendererError::CompilationFailed;
     }
 
     std::stringstream frag_buffer;
@@ -266,13 +268,13 @@ Result<void> ProceduralHexRenderer::create_shaders() {
     // Create shaders
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
-        return std::unexpected(vert_result.error());
+        return vert_result.error();
     }
     vertex_shader_ = *vert_result;
 
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
-        return std::unexpected(frag_result.error());
+        return frag_result.error();
     }
     fragment_shader_ = *frag_result;
 
@@ -288,7 +290,7 @@ Result<void> ProceduralHexRenderer::create_buffers() {
 
     auto instance_result = renderer_->create_buffer(instance_desc);
     if (!instance_result) {
-        return std::unexpected(instance_result.error());
+        return instance_result.error();
     }
     instance_buffer_ = *instance_result;
 
@@ -300,7 +302,7 @@ Result<void> ProceduralHexRenderer::create_buffers() {
 
     auto global_result = renderer_->create_buffer(global_desc);
     if (!global_result) {
-        return std::unexpected(global_result.error());
+        return global_result.error();
     }
     global_uniforms_buffer_ = *global_result;
 
@@ -312,7 +314,7 @@ Result<void> ProceduralHexRenderer::create_buffers() {
 
     auto lighting_result = renderer_->create_buffer(lighting_desc);
     if (!lighting_result) {
-        return std::unexpected(lighting_result.error());
+        return lighting_result.error();
     }
     lighting_uniforms_buffer_ = *lighting_result;
 
@@ -342,14 +344,14 @@ Result<void> ProceduralHexRenderer::create_pipeline() {
     static const VertexBinding instance_binding{.binding = 0,
                                                 .stride =
                                                     static_cast<std::uint32_t>(HexInstance::size()),
-                                                .attributes = instance_attributes};
+                                                .attributes = Core::Modern::span<const VertexAttribute>{instance_attributes}};
 
     // Create pipeline
     static const ShaderHandle shaders[] = {vertex_shader_, fragment_shader_};
     static const VertexBinding bindings[] = {instance_binding};
 
-    PipelineDesc pipeline_desc{.shaders = shaders,
-                               .vertex_bindings = bindings,
+    PipelineDesc pipeline_desc{.shaders = Core::Modern::span<const ShaderHandle>{shaders},
+                               .vertex_bindings = Core::Modern::span<const VertexBinding>{bindings},
                                .render_state = RenderState{.topology = PrimitiveTopology::Triangles,
                                                            .blend_mode = BlendMode::None,
                                                            .cull_mode = CullMode::Back,
@@ -361,7 +363,7 @@ Result<void> ProceduralHexRenderer::create_pipeline() {
 
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
-        return std::unexpected(pipeline_result.error());
+        return pipeline_result.error();
     }
     render_pipeline_ = *pipeline_result;
 

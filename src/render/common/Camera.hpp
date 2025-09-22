@@ -28,7 +28,7 @@ class Camera {
 
     void update_view_matrix() const {
         if (view_dirty_) {
-            view_matrix_ = look_at(position_, target_, up_);
+            view_matrix_ = Core::Math::look_at(position_, target_, up_);
             view_dirty_ = false;
             view_projection_dirty_ = true;
         }
@@ -36,7 +36,7 @@ class Camera {
 
     void update_projection_matrix() const {
         if (projection_dirty_) {
-            projection_matrix_ = perspective(fov_, aspect_ratio_, near_plane_, far_plane_);
+            projection_matrix_ = Core::Math::perspective(fov_, aspect_ratio_, near_plane_, far_plane_);
             projection_dirty_ = false;
             view_projection_dirty_ = true;
         }

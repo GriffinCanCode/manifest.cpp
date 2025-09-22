@@ -106,7 +106,7 @@ class RenderGraph {
     /**
      * Get frame statistics
      */
-    [[nodiscard]] const FrameStats& get_frame_stats() const noexcept { return frame_stats_; }
+    [[nodiscard]] const RenderStats& get_frame_stats() const noexcept { return frame_stats_; }
 
     /**
      * Reset statistics
@@ -143,7 +143,7 @@ class RenderGraph {
 
     Renderer* renderer_{nullptr};
     std::vector<RenderPassEntry> passes_;
-    FrameStats frame_stats_{};
+    RenderStats frame_stats_{};
 
     [[nodiscard]] Result<void> initialize_all_passes();
 };

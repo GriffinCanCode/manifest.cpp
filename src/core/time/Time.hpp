@@ -2,9 +2,13 @@
 
 #include "../types/Types.hpp"
 #include <chrono>
-#include <concepts>
+#include <vector>
+#include <string>
+#include <unordered_map>
 
-namespace Manifest::Core::Time {
+namespace Manifest {
+namespace Core {
+namespace Time {
 
 using namespace Core::Types;
 
@@ -12,10 +16,23 @@ using Clock = std::chrono::high_resolution_clock;
 using Duration = std::chrono::nanoseconds;
 using TimePoint = Clock::time_point;
 
+#if __has_include(<concepts>) && defined(__cpp_concepts)
 template<typename T>
 concept Temporal = requires(T t) {
     { t.update(Duration{}) } -> std::same_as<void>;
 };
+#else
+// Define a simple trait for non-concept compilers
+// Helper for SFINAE detection
+template<typename T, typename = void>
+struct is_temporal : std::false_type {};
+
+template<typename T>
+struct is_temporal<T, decltype(std::declval<T>().update(Duration{}), void())> : std::true_type {};
+
+template<typename T>
+constexpr bool is_temporal_v = is_temporal<T>::value;
+#endif
 
 class GameTime {
     GameTurn current_turn_{0};
@@ -160,8 +177,11 @@ class Timer {
     }
 };
 
+// Deduction guide for compilers that support it
+#if __cpp_deduction_guides
 template <typename Func>
 Timer(Duration, Func, bool = true) -> Timer<Func>;
+#endif
 
 class Profiler {
     struct Sample {
@@ -210,7 +230,11 @@ class Profiler {
 #define PROFILE_SCOPE(profiler, name) auto _timer = (profiler).scope(name)
 
 // Fixed timestep update system
+#if __has_include(<concepts>) && defined(__cpp_concepts)
 template <Temporal... Systems>
+#else
+template <typename... Systems>
+#endif
 class FixedTimeStep {
     static constexpr Duration fixed_timestep_{std::chrono::microseconds(16667)};  // ~60 FPS
     Duration accumulator_{};
@@ -223,10 +247,22 @@ class FixedTimeStep {
         accumulator_ += delta_time;
 
         while (accumulator_ >= fixed_timestep_) {
-            std::apply([](auto*... systems) { (systems->update(fixed_timestep_), ...); }, systems_);
-
+            update_systems(std::index_sequence_for<Systems...>{});
             accumulator_ -= fixed_timestep_;
         }
+    }
+
+private:
+    template<std::size_t... Is>
+    void update_systems(std::index_sequence<Is...>) {
+        auto update_one = [this](auto* system) { system->update(fixed_timestep_); };
+        // Use fold expression if available, otherwise manual expansion
+#if __cpp_fold_expressions
+        (update_one(std::get<Is>(systems_)), ...);
+#else
+        int dummy[] = {0, (update_one(std::get<Is>(systems_)), 0)...};
+        (void)dummy;
+#endif
     }
 
     [[nodiscard]] static constexpr Duration timestep() noexcept { return fixed_timestep_; }
@@ -236,4 +272,6 @@ class FixedTimeStep {
     }
 };
 
-} // namespace Manifest::Core::Time
+}  // namespace Time
+}  // namespace Core
+}  // namespace Manifest

@@ -190,3 +190,5 @@ bin/
 lib/
 obj/
 dist/
+.cache
+compile_commands.json

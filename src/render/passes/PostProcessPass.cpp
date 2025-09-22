@@ -11,7 +11,7 @@ namespace Passes {
 
 Result<void> PostProcessPass::initialize(Renderer* renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = renderer;
@@ -63,7 +63,7 @@ void PostProcessPass::shutdown() {
 
 Result<void> PostProcessPass::execute(const PassContext& context) {
     if (!is_initialized_) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     // Update uniforms for this frame
@@ -123,7 +123,7 @@ Result<void> PostProcessPass::create_postprocess_resources() {
 
     auto temp_tex_result = renderer_->create_texture(temp_tex_desc);
     if (!temp_tex_result) {
-        return std::unexpected(temp_tex_result.error());
+        return temp_tex_result.error();
     }
     temp_texture_ = *temp_tex_result;
 
@@ -133,7 +133,7 @@ Result<void> PostProcessPass::create_postprocess_resources() {
 
     auto history_tex_result = renderer_->create_texture(history_tex_desc);
     if (!history_tex_result) {
-        return std::unexpected(history_tex_result.error());
+        return history_tex_result.error();
     }
     history_texture_ = *history_tex_result;
 
@@ -141,7 +141,7 @@ Result<void> PostProcessPass::create_postprocess_resources() {
     std::array<TextureHandle, 1> color_attachments{temp_texture_};
     auto rt_result = renderer_->create_render_target(color_attachments, {});
     if (!rt_result) {
-        return std::unexpected(rt_result.error());
+        return rt_result.error();
     }
     temp_render_target_ = *rt_result;
 
@@ -153,7 +153,7 @@ Result<void> PostProcessPass::create_postprocess_resources() {
 
     auto buffer_result = renderer_->create_buffer(uniforms_desc);
     if (!buffer_result) {
-        return std::unexpected(buffer_result.error());
+        return buffer_result.error();
     }
     postprocess_uniforms_buffer_ = *buffer_result;
 
@@ -276,7 +276,7 @@ void main() {
 
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
-        return std::unexpected(vert_result.error());
+        return vert_result.error();
     }
     fullscreen_vertex_shader_ = *vert_result;
 
@@ -289,7 +289,7 @@ void main() {
 
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
-        return std::unexpected(frag_result.error());
+        return frag_result.error();
     }
     postprocess_fragment_shader_ = *frag_result;
 
@@ -314,7 +314,7 @@ Result<void> PostProcessPass::create_postprocess_pipeline() {
 
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
-        return std::unexpected(pipeline_result.error());
+        return pipeline_result.error();
     }
     postprocess_pipeline_ = *pipeline_result;
 

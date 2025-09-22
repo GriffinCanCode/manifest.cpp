@@ -25,7 +25,7 @@ target_include_directories(culling
 # Link against core math library
 target_link_libraries(culling
     PRIVATE
-        core_math
+        core
 )
 
 # Enable modern C++20 features
@@ -33,9 +33,15 @@ target_compile_features(culling PRIVATE cxx_std_20)
 
 # Compiler-specific optimizations
 if(MSVC)
-    target_compile_options(culling PRIVATE /W4 /arch:AVX2)
+    target_compile_options(culling PRIVATE /W4)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+        target_compile_options(culling PRIVATE /arch:AVX2)
+    endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(culling PRIVATE -Wall -Wextra -mavx2 -mfma)
+    target_compile_options(culling PRIVATE -Wall -Wextra)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+        target_compile_options(culling PRIVATE -mavx2 -mfma)
+    endif()
 endif()
 
 # Group source files for IDE

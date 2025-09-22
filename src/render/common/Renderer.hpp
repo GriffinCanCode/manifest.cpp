@@ -1,15 +1,15 @@
 #pragma once
 
-#include <expected>
+#include "../../core/types/Modern.hpp"
 #include <functional>
 #include <memory>
-#include <span>
 #include <string_view>
 #include <cstddef>
 
 #include "Types.hpp"
 
-namespace Manifest::Render {
+namespace Manifest {
+namespace Render {
 
 enum class RendererError {
     InitializationFailed,
@@ -22,7 +22,7 @@ enum class RendererError {
 };
 
 template <typename T>
-using Result = std::expected<T, RendererError>;
+using Result = Core::Modern::Result<T, RendererError>;
 
 class Renderer {
    public:
@@ -34,13 +34,13 @@ class Renderer {
 
     // Resource creation
     virtual Result<BufferHandle> create_buffer(const BufferDesc& desc,
-                                               std::span<const std::byte> initial_data = {}) = 0;
+                                               Core::Modern::span<const Core::Modern::byte> initial_data = {}) = 0;
     virtual Result<TextureHandle> create_texture(const TextureDesc& desc,
-                                                 std::span<const std::byte> initial_data = {}) = 0;
+                                                 Core::Modern::span<const Core::Modern::byte> initial_data = {}) = 0;
     virtual Result<ShaderHandle> create_shader(const ShaderDesc& desc) = 0;
     virtual Result<PipelineHandle> create_pipeline(const PipelineDesc& desc) = 0;
     virtual Result<RenderTargetHandle> create_render_target(
-        std::span<const TextureHandle> color_attachments, TextureHandle depth_attachment = {}) = 0;
+        Core::Modern::span<const TextureHandle> color_attachments, TextureHandle depth_attachment = {}) = 0;
 
     // Resource destruction
     virtual void destroy_buffer(BufferHandle handle) = 0;
@@ -51,16 +51,16 @@ class Renderer {
 
     // Resource updates
     virtual Result<void> update_buffer(BufferHandle handle, std::size_t offset,
-                                       std::span<const std::byte> data) = 0;
+                                       Core::Modern::span<const Core::Modern::byte> data) = 0;
     virtual Result<void> update_texture(TextureHandle handle, std::uint32_t mip_level,
-                                        std::span<const std::byte> data) = 0;
+                                        Core::Modern::span<const Core::Modern::byte> data) = 0;
 
     // Command recording
     virtual void begin_frame() = 0;
     virtual void end_frame() = 0;
 
     virtual void begin_render_pass(RenderTargetHandle target,
-                                   const Vec4f& clear_color = {0.0f, 0.0f, 0.0f, 1.0f}) = 0;
+                                   const Vec4f& clear_color = Vec4f{0.0f, 0.0f, 0.0f, 1.0f}) = 0;
     virtual void end_render_pass() = 0;
 
     virtual void set_viewport(const Viewport& viewport) = 0;
@@ -109,7 +109,7 @@ class ScopedRenderPass {
 
    public:
     ScopedRenderPass(Renderer* renderer, RenderTargetHandle target,
-                     const Vec4f& clear_color = {0.0f, 0.0f, 0.0f, 1.0f})
+                     const Vec4f& clear_color = Vec4f{0.0f, 0.0f, 0.0f, 1.0f})
         : renderer_{renderer} {
         renderer_->begin_render_pass(target, clear_color);
     }
@@ -171,4 +171,5 @@ constexpr std::string_view to_string(RendererError error) noexcept {
     }
 }
 
-}  // namespace Manifest::Render
+}  // namespace Render
+}  // namespace Manifest

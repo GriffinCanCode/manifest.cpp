@@ -1,11 +1,9 @@
 #include <iostream>
 #include <chrono>
-#include <format>
-#include <numbers>
+#include <iomanip>
 
 #include "core/math/Matrix.hpp"
 #include "core/math/Vector.hpp"
-#include "core/memory/Pool.hpp"
 #include "core/time/Time.hpp"
 #include "core/types/Types.hpp"
 #include "render/common/Camera.hpp"
@@ -13,13 +11,13 @@
 #include "world/tiles/Map.hpp"
 
 using namespace Manifest;
-using namespace Core::Types;
-using namespace Core::Math;
-using namespace Core::Memory;
-using namespace Core::Time;
-using namespace World::Tiles;
-using namespace World::Terrain;
-using namespace Render;
+using namespace Manifest::Core::Types;
+using namespace Manifest::Core::Math;
+using namespace Manifest::Core::Memory;
+using namespace Manifest::Core::Time;
+using namespace Manifest::World::Tiles;
+using namespace Manifest::World::Terrain;
+using namespace Manifest::Render;
 
 void print_banner() {
     std::cout << R"(
@@ -39,10 +37,10 @@ void demonstrate_strong_types() {
     TileId tile2{43};
     CityId city{100};
 
-    std::cout << std::format("Tile ID 1: {}\n", tile1.value());
-    std::cout << std::format("Tile ID 2: {}\n", tile2.value());
-    std::cout << std::format("City ID: {}\n", city.value());
-    std::cout << std::format("Tile1 < Tile2: {}\n", tile1 < tile2);
+    std::cout << "Tile ID 1: " << tile1.value() << "\n";
+    std::cout << "Tile ID 2: " << tile2.value() << "\n";
+    std::cout << "City ID: " << city.value() << "\n";
+    std::cout << "Tile1 < Tile2: " << std::boolalpha << (tile1 < tile2) << "\n";
 
     // This would cause a compile error (different types):
     // bool invalid = (tile1 == city);
@@ -50,11 +48,11 @@ void demonstrate_strong_types() {
     Money gold{1000.0};
     Population people{50000.0};
 
-    std::cout << std::format("Gold: {:.2f}\n", gold.value());
-    std::cout << std::format("Population: {:.0f}\n", people.value());
+    std::cout << "Gold: " << std::fixed << std::setprecision(2) << gold.value() << "\n";
+    std::cout << "Population: " << std::fixed << std::setprecision(0) << people.value() << "\n";
 
     Money more_gold = gold + Money{500.0};
-    std::cout << std::format("More gold: {:.2f}\n", more_gold.value());
+    std::cout << "More gold: " << std::fixed << std::setprecision(2) << more_gold.value() << "\n";
     std::cout << std::endl;
 }
 
@@ -81,7 +79,7 @@ void demonstrate_math_system() {
               << ", " << cross_product.y() << ", " << cross_product.z() << ")\n";
 
     // Matrix operations
-    Mat4f transform =
+    [[maybe_unused]] Mat4f transform =
         translation(Vec3f{10.0f, 0.0f, 0.0f}) * rotation_y(static_cast<float>(M_PI) / 4.0f);
     std::cout << "4x4 transformation matrix created successfully\n";
     std::cout << std::endl;
@@ -194,9 +192,9 @@ void demonstrate_camera_system() {
               << ", " << camera.position().y() << ", " << camera.position().z() << ")\n";
 
     // Test matrix generation
-    const Mat4f& view_matrix = camera.view_matrix();
-    const Mat4f& proj_matrix = camera.projection_matrix();
-    const Mat4f& vp_matrix = camera.view_projection_matrix();
+    [[maybe_unused]] const Mat4f& view_matrix = camera.view_matrix();
+    [[maybe_unused]] const Mat4f& proj_matrix = camera.projection_matrix();
+    [[maybe_unused]] const Mat4f& vp_matrix = camera.view_projection_matrix();
 
     std::cout << "View, projection, and view-projection matrices generated successfully\n";
     std::cout << std::endl;

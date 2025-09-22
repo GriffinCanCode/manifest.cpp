@@ -11,7 +11,7 @@ namespace Passes {
 
 Result<void> MainPass::initialize(Renderer* renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = renderer;
@@ -65,7 +65,7 @@ void MainPass::shutdown() {
 
 Result<void> MainPass::execute(const PassContext& context) {
     if (!is_initialized_) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     // Update uniforms with current frame data
@@ -121,7 +121,7 @@ Result<void> MainPass::create_main_resources() {
 
     auto buffer_result = renderer_->create_buffer(uniforms_desc);
     if (!buffer_result) {
-        return std::unexpected(buffer_result.error());
+        return buffer_result.error();
     }
     main_uniforms_buffer_ = *buffer_result;
 
@@ -265,7 +265,7 @@ void main() {
 
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
-        return std::unexpected(vert_result.error());
+        return vert_result.error();
     }
     main_vertex_shader_ = *vert_result;
 
@@ -278,7 +278,7 @@ void main() {
 
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
-        return std::unexpected(frag_result.error());
+        return frag_result.error();
     }
     main_fragment_shader_ = *frag_result;
 
@@ -323,7 +323,7 @@ Result<void> MainPass::create_main_pipeline() {
 
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
-        return std::unexpected(pipeline_result.error());
+        return pipeline_result.error();
     }
     main_pipeline_ = *pipeline_result;
 

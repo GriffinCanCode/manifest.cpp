@@ -1,0 +1,77 @@
+# clangd Language Server Configuration for C++23 Project
+---
+# Use compile_commands.json from build directory
+CompileFlags:
+  # Additional flags for better language server support
+  Add:
+    - "-ferror-limit=0"
+    - "-std=c++23"
+  # Remove problematic flags that might confuse the language server
+  Remove:
+    - "-mcpu=native"
+    - "-mtune=native"
+
+# Index configuration
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+# Completion preferences
+Completion:
+  AllScopes: Yes
+  
+# Diagnostics preferences  
+Diagnostics:
+  ClangTidy:
+    Add: 
+      - "bugprone-*"
+      - "cert-*"
+      - "clang-analyzer-*"
+      - "concurrency-*"
+      - "cppcoreguidelines-*"
+      - "google-*"
+      - "hicpp-*"
+      - "llvm-*"
+      - "misc-*"
+      - "modernize-*"
+      - "performance-*"
+      - "portability-*"
+      - "readability-*"
+      - "altera-*"
+    Remove: 
+      - "readability-magic-numbers"
+      - "cppcoreguidelines-avoid-magic-numbers"
+      - "bugprone-easily-swappable-parameters"
+      - "cert-err58-cpp"
+      - "cppcoreguidelines-pro-bounds-array-to-pointer-decay"
+      - "cppcoreguidelines-pro-bounds-pointer-arithmetic"
+      - "cppcoreguidelines-pro-type-vararg"
+      - "google-runtime-references"
+      - "hicpp-avoid-c-arrays"
+      - "hicpp-no-array-decay"
+      - "hicpp-vararg"
+      - "llvm-header-guard"
+      - "llvmlibc-*"
+      - "misc-no-recursion"
+      - "readability-avoid-const-params-in-decls"
+      - "readability-function-cognitive-complexity"
+      - "fuchsia-*"
+      - "zircon-*"
+      - "android-*"
+      - "objc-*"
+      - "darwin-*"
+    CheckOptions:
+      readability-identifier-naming.VariableCase: lower_case
+      readability-identifier-naming.FunctionCase: lower_case
+      readability-identifier-naming.ClassCase: CamelCase
+
+# Hover information
+Hover:
+  ShowAKA: Yes
+  
+# Inlay hints for modern C++
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  Designators: Yes

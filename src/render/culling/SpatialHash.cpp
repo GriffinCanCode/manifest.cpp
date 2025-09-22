@@ -73,7 +73,8 @@ void SpatialHash::query_frustum(const FrustumCuller& culler, QueryResult& result
     
     // Use coarsest level for initial broad-phase culling, then refine
     const Level& coarse_level = levels_.back();
-    const Level& fine_level = levels_.front();
+    // Note: fine_level could be used for detailed refinement in the future
+    [[maybe_unused]] const Level& fine_level = levels_.front();
     
     // First pass: test coarse buckets
     std::vector<std::int64_t> potentially_visible_buckets;

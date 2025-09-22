@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <type_traits>
@@ -81,60 +82,60 @@ class Vector {
     // Arithmetic operations
     constexpr Vector operator+(const Vector& other) const noexcept {
         Vector result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result[i] = data_[i] + other[i];
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result[idx] = data_[idx] + other[idx];
         }
         return result;
     }
 
     constexpr Vector operator-(const Vector& other) const noexcept {
         Vector result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result[i] = data_[i] - other[i];
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result[idx] = data_[idx] - other[idx];
         }
         return result;
     }
 
     constexpr Vector operator*(T scalar) const noexcept {
         Vector result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result[i] = data_[i] * scalar;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result[idx] = data_[idx] * scalar;
         }
         return result;
     }
 
     constexpr Vector operator/(T scalar) const noexcept {
         Vector result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result[i] = data_[i] / scalar;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result[idx] = data_[idx] / scalar;
         }
         return result;
     }
 
     constexpr Vector& operator+=(const Vector& other) noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            data_[i] += other[i];
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            data_[idx] += other[idx];
         }
         return *this;
     }
 
     constexpr Vector& operator-=(const Vector& other) noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            data_[i] -= other[i];
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            data_[idx] -= other[idx];
         }
         return *this;
     }
 
     constexpr Vector& operator*=(T scalar) noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            data_[i] *= scalar;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            data_[idx] *= scalar;
         }
         return *this;
     }
 
     constexpr Vector& operator/=(T scalar) noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            data_[i] /= scalar;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            data_[idx] /= scalar;
         }
         return *this;
     }
@@ -142,8 +143,8 @@ class Vector {
     // Vector operations
     constexpr T dot(const Vector& other) const noexcept {
         T result{};
-        for (std::size_t i = 0; i < N; ++i) {
-            result += data_[i] * other[i];
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result += data_[idx] * other[idx];
         }
         return result;
     }
@@ -163,25 +164,51 @@ class Vector {
     }
 
     template <typename U = T>
-    typename std::enable_if<std::is_floating_point<U>::value, void>::type normalize() noexcept {
+    typename std::enable_if<std::is_floating_point<U>::value, Vector&>::type normalize() noexcept {
         T len = length();
         if (len > T{0}) {
             *this /= len;
         }
+        return *this;
+    }
+
+    template <typename U = T>
+    typename std::enable_if<std::is_floating_point<U>::value, Vector>::type normalize() const noexcept {
+        T len = length();
+        return len > T{0} ? (*this / len) : Vector{};
     }
 
     // Cross product (3D only)
     template <std::size_t M = N>
     typename std::enable_if<M == 3, Vector>::type cross(const Vector& other) const noexcept {
-        return Vector{data_[1] * other[2] - data_[2] * other[1],
-                      data_[2] * other[0] - data_[0] * other[2],
-                      data_[0] * other[1] - data_[1] * other[0]};
+        return Vector{(data_[1] * other[2]) - (data_[2] * other[1]),
+                      (data_[2] * other[0]) - (data_[0] * other[2]),
+                      (data_[0] * other[1]) - (data_[1] * other[0])};
+    }
+
+    // Component-wise min/max
+    Vector min(const Vector& other) const noexcept {
+        Vector result;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result.data_[idx] = std::min(data_[idx], other.data_[idx]);
+        }
+        return result;
+    }
+
+    Vector max(const Vector& other) const noexcept {
+        Vector result;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            result.data_[idx] = std::max(data_[idx], other.data_[idx]);
+        }
+        return result;
     }
 
     // Comparison
     constexpr bool operator==(const Vector& other) const noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            if (data_[i] != other.data_[i]) return false;
+        for (std::size_t idx = 0; idx < N; ++idx) {
+            if (data_[idx] != other.data_[idx]) {
+                return false;
+            }
         }
         return true;
     }
@@ -301,21 +328,21 @@ constexpr Vector<T, N> operator*(T scalar, const Vector<T, N>& vec) noexcept {
 
 // Distance functions
 template <typename T, std::size_t N>
-constexpr T distance_squared(const Vector<T, N>& a, const Vector<T, N>& b) noexcept {
-    return (b - a).length_squared();
+constexpr T distance_squared(const Vector<T, N>& point_a, const Vector<T, N>& point_b) noexcept {
+    return (point_b - point_a).length_squared();
 }
 
 template <typename T, std::size_t N>
 typename std::enable_if<std::is_floating_point<T>::value, T>::type distance(
-    const Vector<T, N>& a, const Vector<T, N>& b) noexcept {
-    return (b - a).length();
+    const Vector<T, N>& point_a, const Vector<T, N>& point_b) noexcept {
+    return (point_b - point_a).length();
 }
 
 // Lerp
 template <typename T, std::size_t N>
-constexpr Vector<T, N> lerp(const Vector<T, N>& a, const Vector<T, N>& b, T t) noexcept {
+constexpr Vector<T, N> lerp(const Vector<T, N>& start_point, const Vector<T, N>& end_point, T interpolation) noexcept {
     static_assert(std::is_floating_point<T>::value, "T must be a floating point type for lerp");
-    return a + (b - a) * t;
+    return start_point + (end_point - start_point) * interpolation;
 }
 
 }  // namespace Math

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <array>
+#include "../../core/types/Modern.hpp"
 #include <cstdint>
-#include <expected>
 #include <memory>
-#include <span>
+#include <string>
 #include <string_view>
 
 #include "../../core/math/Matrix.hpp"
@@ -22,9 +21,9 @@ using namespace Core::Math;
 class RenderPass;
 struct PassContext;
 
-// Result template using std::expected
+// Result template using modern compatibility layer
 template <typename T>
-using Result = std::expected<T, RendererError>;
+using Result = Core::Modern::Result<T, RendererError>;
 
 /**
  * Base class for all render passes in the multi-pass rendering pipeline.

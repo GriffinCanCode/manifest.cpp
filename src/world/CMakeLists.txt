@@ -1,23 +1,17 @@
-add_library(world STATIC
-    tiles/Tile.hpp
-    tiles/Map.hpp
-    terrain/Generator.hpp
-)
+# Header-only library
+add_library(world INTERFACE)
 
 target_include_directories(world 
-    PUBLIC 
+    INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 target_link_libraries(world 
-    PUBLIC
+    INTERFACE
         core
 )
 
 target_compile_features(world 
-    PUBLIC 
+    INTERFACE 
         cxx_std_23
 )
-
-# Header-only library, no source files needed
-set_target_properties(world PROPERTIES LINKER_LANGUAGE CXX)

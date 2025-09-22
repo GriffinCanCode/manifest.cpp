@@ -23,7 +23,7 @@ target_include_directories(ManifestRenderPasses
 
 target_link_libraries(ManifestRenderPasses
     PUBLIC
-        ManifestCore
+        core
         ManifestRenderCommon
     PRIVATE
         # Add any additional dependencies

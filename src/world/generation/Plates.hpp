@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <random>
+#include <span>
 #include <unordered_set>
 #include <vector>
 

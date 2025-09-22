@@ -111,14 +111,14 @@ class PostProcessPass final : public RenderPass {
 
     // TAA jitter pattern
     std::uint32_t frame_index_{0};
-    static constexpr std::array<Vec2f, 8> TAA_JITTER_PATTERN{{{-0.5f, -0.5f},
-                                                              {0.5f, -0.5f},
-                                                              {-0.5f, 0.5f},
-                                                              {0.5f, 0.5f},
-                                                              {-0.25f, -0.25f},
-                                                              {0.25f, -0.25f},
-                                                              {-0.25f, 0.25f},
-                                                              {0.25f, 0.25f}}};
+    static constexpr std::array<Vec2f, 8> TAA_JITTER_PATTERN{{Vec2f{-0.5f, -0.5f},
+                                                              Vec2f{0.5f, -0.5f},
+                                                              Vec2f{-0.5f, 0.5f},
+                                                              Vec2f{0.5f, 0.5f},
+                                                              Vec2f{-0.25f, -0.25f},
+                                                              Vec2f{0.25f, -0.25f},
+                                                              Vec2f{-0.25f, 0.25f},
+                                                              Vec2f{0.25f, 0.25f}}};
 
     [[nodiscard]] Result<void> create_postprocess_resources();
     [[nodiscard]] Result<void> create_postprocess_shaders();

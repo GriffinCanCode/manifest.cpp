@@ -13,6 +13,17 @@ namespace Manifest::World::Terrain {
 using namespace Tiles;
 using namespace Core::Math;
 
+// Helper type trait to check if a type is map-like
+template <typename T>
+struct is_map_like : std::false_type {};
+
+template <typename T>
+constexpr bool is_map_like_v = is_map_like<T>::value;
+
+// Specialize for TileMap
+template <>
+struct is_map_like<Tiles::TileMap> : std::true_type {};
+
 // Noise interface for procedural generation
 class NoiseGenerator {
    public:
@@ -65,12 +76,14 @@ class PerlinNoise : public NoiseGenerator {
         float u = fade(x);
         float v = fade(y);
 
-        int A = permutation_[X] + Y;
-        int B = permutation_[X + 1] + Y;
+        int A = permutation_[static_cast<std::size_t>(X)] + Y;
+        int B = permutation_[static_cast<std::size_t>(X + 1)] + Y;
 
         return lerp(
-            v, lerp(u, grad(permutation_[A], x, y), grad(permutation_[B], x - 1, y)),
-            lerp(u, grad(permutation_[A + 1], x, y - 1), grad(permutation_[B + 1], x - 1, y - 1)));
+            v, lerp(u, grad(permutation_[static_cast<std::size_t>(A)], x, y), 
+                       grad(permutation_[static_cast<std::size_t>(B)], x - 1, y)),
+            lerp(u, grad(permutation_[static_cast<std::size_t>(A + 1)], x, y - 1), 
+                    grad(permutation_[static_cast<std::size_t>(B + 1)], x - 1, y - 1)));
     }
 
     float sample(float x, float y, float z) const override {
@@ -86,23 +99,24 @@ class PerlinNoise : public NoiseGenerator {
         float v = fade(y);
         float w = fade(z);
 
-        int A = permutation_[X] + Y;
-        int AA = permutation_[A] + Z;
-        int AB = permutation_[A + 1] + Z;
-        int B = permutation_[X + 1] + Y;
-        int BA = permutation_[B] + Z;
-        int BB = permutation_[B + 1] + Z;
+        int A = permutation_[static_cast<std::size_t>(X)] + Y;
+        int AA = permutation_[static_cast<std::size_t>(A)] + Z;
+        int AB = permutation_[static_cast<std::size_t>(A + 1)] + Z;
+        int B = permutation_[static_cast<std::size_t>(X + 1)] + Y;
+        int BA = permutation_[static_cast<std::size_t>(B)] + Z;
+        int BB = permutation_[static_cast<std::size_t>(B + 1)] + Z;
 
         return lerp(
             w,
-            lerp(v, lerp(u, grad(permutation_[AA], x, y, z), grad(permutation_[BA], x - 1, y, z)),
-                 lerp(u, grad(permutation_[AB], x, y - 1, z),
-                      grad(permutation_[BB], x - 1, y - 1, z))),
+            lerp(v, lerp(u, grad(permutation_[static_cast<std::size_t>(AA)], x, y, z), 
+                              grad(permutation_[static_cast<std::size_t>(BA)], x - 1, y, z)),
+                 lerp(u, grad(permutation_[static_cast<std::size_t>(AB)], x, y - 1, z),
+                      grad(permutation_[static_cast<std::size_t>(BB)], x - 1, y - 1, z))),
             lerp(v,
-                 lerp(u, grad(permutation_[AA + 1], x, y, z - 1),
-                      grad(permutation_[BA + 1], x - 1, y, z - 1)),
-                 lerp(u, grad(permutation_[AB + 1], x, y - 1, z - 1),
-                      grad(permutation_[BB + 1], x - 1, y - 1, z - 1))));
+                 lerp(u, grad(permutation_[static_cast<std::size_t>(AA + 1)], x, y, z - 1),
+                      grad(permutation_[static_cast<std::size_t>(BA + 1)], x - 1, y, z - 1)),
+                 lerp(u, grad(permutation_[static_cast<std::size_t>(AB + 1)], x, y - 1, z - 1),
+                      grad(permutation_[static_cast<std::size_t>(BB + 1)], x - 1, y - 1, z - 1))));
     }
 };
 
@@ -257,7 +271,7 @@ class TerrainGenerator {
     }
 
     template <typename MapType>
-    typename std::enable_if<is_map_like<MapType>::value, void>::type generate_climate(
+    typename std::enable_if<is_map_like_v<MapType>, void>::type generate_climate(
         MapType& map) {
         map.for_each_tile([this](Tile& tile) {
             const HexCoordinate& coord = tile.coordinate();
@@ -423,6 +437,4 @@ class TerrainGenerator {
     }
 };
 
-}  // namespace Terrain
-}  // namespace World
-}  // namespace Manifest
+}  // namespace Manifest::World::Terrain

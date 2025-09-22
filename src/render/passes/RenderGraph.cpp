@@ -8,7 +8,7 @@ namespace Passes {
 
 Result<void> RenderGraph::initialize(Renderer* renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = renderer;
@@ -32,7 +32,7 @@ void RenderGraph::shutdown() {
 
 Result<void> RenderGraph::execute(const PassContext& context) {
     if (!renderer_) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     frame_stats_.reset();
@@ -63,7 +63,8 @@ Result<void> RenderGraph::execute(const PassContext& context) {
                                .gpu_time_ms = static_cast<float>(duration.count()) / 1000.0f,
                                .debug_info = std::string{entry.pass->get_name()}};
 
-        frame_stats_.add_pass_stats(pass_result);
+        frame_stats_.draw_calls += pass_result.draw_calls;
+        frame_stats_.vertices_rendered += pass_result.vertices_rendered;
 
         renderer_->pop_debug_group();
     }

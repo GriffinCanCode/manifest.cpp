@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../core/types/Modern.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -8,7 +10,8 @@
 #include "../../core/math/Vector.hpp"
 #include "../../core/types/Types.hpp"
 
-namespace Manifest::Render {
+namespace Manifest {
+namespace Render {
 
 using namespace Core::Types;
 using namespace Core::Math;
@@ -101,11 +104,11 @@ struct ShaderTag {};
 struct PipelineTag {};
 struct RenderTargetTag {};
 
-using BufferHandle = StrongId<BufferTag>;
-using TextureHandle = StrongId<TextureTag>;
-using ShaderHandle = StrongId<ShaderTag>;
-using PipelineHandle = StrongId<PipelineTag>;
-using RenderTargetHandle = StrongId<RenderTargetTag>;
+using BufferHandle = StrongId<BufferTag, std::uint32_t>;
+using TextureHandle = StrongId<TextureTag, std::uint32_t>;
+using ShaderHandle = StrongId<ShaderTag, std::uint32_t>;
+using PipelineHandle = StrongId<PipelineTag, std::uint32_t>;
+using RenderTargetHandle = StrongId<RenderTargetTag, std::uint32_t>;
 
 struct BufferDesc {
     std::size_t size{};
@@ -127,7 +130,7 @@ struct TextureDesc {
 
 struct ShaderDesc {
     ShaderStage stage{};
-    std::span<const std::uint8_t> bytecode{};
+    Core::Modern::span<const Core::Modern::byte> bytecode{};
     std::string_view entry_point{"main"};
     std::string_view debug_name{};
 };
@@ -158,12 +161,12 @@ struct VertexAttribute {
 struct VertexBinding {
     std::uint32_t binding{};
     std::uint32_t stride{};
-    std::span<const VertexAttribute> attributes{};
+    Core::Modern::span<const VertexAttribute> attributes{};
 };
 
 struct PipelineDesc {
-    std::span<const ShaderHandle> shaders{};
-    std::span<const VertexBinding> vertex_bindings{};
+    Core::Modern::span<const ShaderHandle> shaders{};
+    Core::Modern::span<const VertexBinding> vertex_bindings{};
     RenderState render_state{};
     RenderTargetHandle render_target{};
     std::string_view debug_name{};
@@ -209,4 +212,5 @@ struct RenderStats {
     }
 };
 
-}  // namespace Manifest::Render
+}  // namespace Render
+}  // namespace Manifest

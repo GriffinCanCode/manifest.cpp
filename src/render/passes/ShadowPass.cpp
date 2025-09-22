@@ -1,6 +1,7 @@
 #include "ShadowPass.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <cfloat>
 #include <cmath>
 #include <cstring>
@@ -14,7 +15,7 @@ namespace Passes {
 
 Result<void> ShadowPass::initialize(Renderer* renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = renderer;
@@ -63,7 +64,7 @@ void ShadowPass::shutdown() {
 
 Result<void> ShadowPass::execute(const PassContext& context) {
     if (!is_initialized_) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     // Calculate cascade matrices based on camera frustum
@@ -112,7 +113,7 @@ Result<void> ShadowPass::create_shadow_resources() {
 
     auto tex_result = renderer_->create_texture(shadow_tex_desc);
     if (!tex_result) {
-        return std::unexpected(tex_result.error());
+        return tex_result.error();
     }
     shadow_texture_ = *tex_result;
 
@@ -120,7 +121,7 @@ Result<void> ShadowPass::create_shadow_resources() {
     std::array<TextureHandle, 0> color_attachments{};  // No color attachments for depth-only pass
     auto rt_result = renderer_->create_render_target(color_attachments, shadow_texture_);
     if (!rt_result) {
-        return std::unexpected(rt_result.error());
+        return rt_result.error();
     }
     shadow_render_target_ = *rt_result;
 
@@ -132,7 +133,7 @@ Result<void> ShadowPass::create_shadow_resources() {
 
     auto buffer_result = renderer_->create_buffer(uniforms_desc);
     if (!buffer_result) {
-        return std::unexpected(buffer_result.error());
+        return buffer_result.error();
     }
     shadow_uniforms_buffer_ = *buffer_result;
 
@@ -141,7 +142,7 @@ Result<void> ShadowPass::create_shadow_resources() {
 
 Result<void> ShadowPass::create_shadow_shaders() {
     // Load shadow vertex shader
-    std::filesystem::path shader_dir = "assets/shaders";
+    Core::Modern::fs::path shader_dir = "assets/shaders";
 
     // Simple depth-only vertex shader
     std::string vert_source = R"(
@@ -194,7 +195,7 @@ void main() {
 
     auto vert_result = renderer_->create_shader(vert_desc);
     if (!vert_result) {
-        return std::unexpected(vert_result.error());
+        return vert_result.error();
     }
     shadow_vertex_shader_ = *vert_result;
 
@@ -207,7 +208,7 @@ void main() {
 
     auto frag_result = renderer_->create_shader(frag_desc);
     if (!frag_result) {
-        return std::unexpected(frag_result.error());
+        return frag_result.error();
     }
     shadow_fragment_shader_ = *frag_result;
 
@@ -252,7 +253,7 @@ Result<void> ShadowPass::create_shadow_pipeline() {
 
     auto pipeline_result = renderer_->create_pipeline(pipeline_desc);
     if (!pipeline_result) {
-        return std::unexpected(pipeline_result.error());
+        return pipeline_result.error();
     }
     shadow_pipeline_ = *pipeline_result;
 
@@ -265,7 +266,7 @@ void ShadowPass::calculate_cascade_matrices(const PassContext& context) {
 
     // Calculate cascade splits in view space
     float near_plane = 1.0f;
-    float far_plane = 1000.0f;
+    [[maybe_unused]] float far_plane = 1000.0f;
 
     for (std::uint32_t i = 0; i < CASCADE_COUNT; ++i) {
         float split_near = (i == 0) ? near_plane : cascade_splits_[i - 1];
@@ -314,8 +315,8 @@ Mat4f ShadowPass::create_orthographic_projection(const Vec3f& light_dir,
     return light_proj * light_view;
 }
 
-std::array<Vec3f, 8> ShadowPass::calculate_frustum_corners(const Mat4f& view_proj, float near_dist,
-                                                           float far_dist) {
+std::array<Vec3f, 8> ShadowPass::calculate_frustum_corners(const Mat4f& view_proj, [[maybe_unused]] float near_dist,
+                                                           [[maybe_unused]] float far_dist) {
     // This is a simplified implementation
     // A full implementation would properly calculate frustum corners from the view projection
     // matrix

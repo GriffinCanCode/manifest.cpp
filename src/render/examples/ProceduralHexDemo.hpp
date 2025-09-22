@@ -3,12 +3,12 @@
 #include <memory>
 #include <vector>
 
-#include "../../core/math/Matrix.hpp"
-#include "../../core/math/Vector.hpp"
 #include "../../world/tiles/Tile.hpp"
 #include "../common/HexRenderer.hpp"
 
-namespace Manifest::Render::Examples {
+namespace Manifest {
+namespace Render {
+namespace Examples {
 
 using namespace Core::Math;
 using namespace World::Tiles;
@@ -68,4 +68,6 @@ class ProceduralHexDemo {
     static float simple_noise(float x, float y);
 };
 
-}  // namespace Manifest::Render::Examples
+}  // namespace Examples
+}  // namespace Render
+}  // namespace Manifest

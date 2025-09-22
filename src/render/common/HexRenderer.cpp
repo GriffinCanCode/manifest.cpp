@@ -1,6 +1,7 @@
 #include "HexRenderer.hpp"
 
 #include <cstddef>
+#include <span>
 #include <vector>
 
 #include "Renderer.hpp"
@@ -20,7 +21,7 @@ bool HexRenderer::initialize(std::unique_ptr<Renderer> renderer, RenderingMode m
         // Initialize procedural renderer
         procedural_renderer_ = std::make_unique<ProceduralHexRenderer>();
         // TODO: Handle initialization result properly
-        procedural_renderer_->initialize(std::move(renderer));
+        [[maybe_unused]] auto init_result = procedural_renderer_->initialize(std::move(renderer));
         return true;
     }
 
@@ -55,7 +56,7 @@ bool HexRenderer::render_tiles(const std::vector<const Tile*>& tiles) {
         // Use modern GPU-based procedural rendering
         procedural_renderer_->prepare_instances(tiles);
         // TODO: Handle render result properly
-        procedural_renderer_->render();
+        [[maybe_unused]] auto render_result = procedural_renderer_->render();
         return true;
     } else {
         // Fall back to legacy CPU-based rendering

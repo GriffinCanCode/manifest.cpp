@@ -10,7 +10,7 @@ namespace Examples {
 
 Result<void> MultiPassDemo::initialize(std::unique_ptr<Renderer> renderer) {
     if (!renderer) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     renderer_ = std::move(renderer);
@@ -39,7 +39,7 @@ void MultiPassDemo::shutdown() {
 
 Result<void> MultiPassDemo::render_frame(float delta_time) {
     if (!is_initialized()) {
-        return std::unexpected(RendererError::InvalidState);
+        return RendererError::InvalidState;
     }
 
     elapsed_time_ += delta_time;
@@ -79,13 +79,13 @@ Result<void> MultiPassDemo::setup_render_passes() {
     // Add shadow pass
     shadow_pass_ = render_graph_.add_pass<ShadowPass>();
     if (!shadow_pass_) {
-        return std::unexpected(RendererError::InitializationFailed);
+        return RendererError::InitializationFailed;
     }
 
     // Add main pass
     main_pass_ = render_graph_.add_pass<MainPass>();
     if (!main_pass_) {
-        return std::unexpected(RendererError::InitializationFailed);
+        return RendererError::InitializationFailed;
     }
 
     // Link main pass to shadow pass for shadow mapping
@@ -94,7 +94,7 @@ Result<void> MultiPassDemo::setup_render_passes() {
     // Add post-process pass
     post_process_pass_ = render_graph_.add_pass<PostProcessPass>();
     if (!post_process_pass_) {
-        return std::unexpected(RendererError::InitializationFailed);
+        return RendererError::InitializationFailed;
     }
 
     // Configure post-processing effects

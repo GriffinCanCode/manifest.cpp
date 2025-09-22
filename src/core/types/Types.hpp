@@ -4,7 +4,9 @@
 #include <limits>
 #include <type_traits>
 
-namespace Manifest::Core::Types {
+namespace Manifest {
+namespace Core {
+namespace Types {
 
 // Strong typing for game IDs to prevent mixing different entity types
 template <typename Tag, typename ValueType = std::uint32_t>
@@ -15,7 +17,9 @@ class StrongId {
     using value_type = ValueType;
     using tag_type = Tag;
 
-    constexpr explicit StrongId(ValueType value = {}) noexcept : value_{value} {}
+    // Allow implicit construction from default value, explicit otherwise
+    constexpr StrongId() noexcept : value_{} {}
+    constexpr explicit StrongId(ValueType value) noexcept : value_{value} {}
 
     constexpr ValueType value() const noexcept { return value_; }
 
@@ -66,17 +70,17 @@ struct BuildingTag {};
 struct ResourceTag {};
 struct PlateTag {};
 
-using TileId = StrongId<TileTag>;
-using ProvinceId = StrongId<ProvinceTag>;
-using RegionId = StrongId<RegionTag>;
-using ContinentId = StrongId<ContinentTag>;
-using CityId = StrongId<CityTag>;
-using UnitId = StrongId<UnitTag>;
-using NationId = StrongId<NationTag>;
-using PlayerId = StrongId<PlayerTag>;
-using BuildingId = StrongId<BuildingTag>;
-using ResourceId = StrongId<ResourceTag>;
-using PlateId = StrongId<PlateTag>;
+using TileId = StrongId<TileTag, std::uint32_t>;
+using ProvinceId = StrongId<ProvinceTag, std::uint32_t>;
+using RegionId = StrongId<RegionTag, std::uint32_t>;
+using ContinentId = StrongId<ContinentTag, std::uint32_t>;
+using CityId = StrongId<CityTag, std::uint32_t>;
+using UnitId = StrongId<UnitTag, std::uint32_t>;
+using NationId = StrongId<NationTag, std::uint32_t>;
+using PlayerId = StrongId<PlayerTag, std::uint32_t>;
+using BuildingId = StrongId<BuildingTag, std::uint32_t>;
+using ResourceId = StrongId<ResourceTag, std::uint32_t>;
+using PlateId = StrongId<PlateTag, std::uint32_t>;
 
 // Numeric types with specific semantics
 template <typename Tag, typename T = double>
@@ -217,4 +221,16 @@ constexpr T toggle_bit(T value, std::uint8_t bit) noexcept {
     return value ^ (T{1} << bit);
 }
 
-} // namespace Manifest::Core::Types
+}  // namespace Types
+}  // namespace Core
+}  // namespace Manifest
+
+// Hash function for StrongId
+namespace std {
+template <typename Tag, typename ValueType>
+struct hash<Manifest::Core::Types::StrongId<Tag, ValueType>> {
+    std::size_t operator()(const Manifest::Core::Types::StrongId<Tag, ValueType>& id) const noexcept {
+        return std::hash<ValueType>{}(id.value());
+    }
+};
+}  // namespace std
