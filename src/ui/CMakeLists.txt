@@ -1,18 +1,8 @@
-# UI systems - to be implemented in future phases  
+# UI Module CMakeLists.txt
+
+add_subdirectory(window)
+
+# Create UI library that links window system
 add_library(ui INTERFACE)
-
-target_include_directories(ui 
-    INTERFACE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-
-target_link_libraries(ui 
-    INTERFACE
-        core
-        render
-)
-
-target_compile_features(ui 
-    INTERFACE 
-        cxx_std_23
-)
+target_link_libraries(ui INTERFACE window)
+target_include_directories(ui INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
