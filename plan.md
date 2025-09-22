@@ -57,37 +57,53 @@
 - [x] Texture-less rendering (everything procedural)
 
 ### Procedural Terrain Generation
-- [ ] Multi-octave noise for continent shapes
+- [X] Multi-octave noise for continent shapes
     - Missing: Noise generation implementation
 - [x] Tectonic plate simulation for mountain ranges
-- [ ] Rainfall simulation for biomes
+- [X] Rainfall simulation for biomes
     - Current: Rainfall property in tiles
     - Missing: Rainfall simulation algorithm
 - [x] River generation following elevation
-- [ ] Climate zones based on latitude
+- [X] Climate zones based on latitude
     - Current: Temperature property exists
     - Missing: Latitude-based climate calculation
-- [ ] Resource distribution based on geology
-    - Current: ResourceType enum and properties
-    - Missing: Geological distribution algorithm
+- [x] Resource distribution based on geology
+    - ✅ Implemented sophisticated geological formation system (Geology.hpp)
+    - ✅ 16 formation types based on real geology (igneous, sedimentary, metamorphic, special)
+    - ✅ Integrated with tectonic plate system for realistic distribution
+    - ✅ Strong typing with Quantity<> templates for geological properties
+    - ✅ Probability-based resource assignment considering age, boundaries, hydrothermal activity
 - [x] Natural wonder placement algorithms
 
 ### Tile System Architecture
 - [x] Hierarchical tile structure (tiles → provinces → regions → continents)
 - [x] Tile adjacency graph with efficient lookups
 - [x] Bitfield tile properties for memory efficiency
-- [ ] Tile improvement system with prerequisites
-    - Current: Basic improvement support
-    - Missing: Prerequisite system and rules
-- [ ] Underground/above-ground/orbital layers
-    - Missing: Multi-layer tile system
-- [ ] Dynamic tile ownership with overlapping claims
-    - Current: Basic owner property
-    - Missing: Overlapping claims system
-- [ ] Cultural influence spreading algorithm
-    - Missing: Cultural influence system
-- [ ] Supply chain pathfinding between tiles
-    - Missing: Supply chain and pathfinding systems
+- [x] Tile improvement system with prerequisites
+    - ✅ Created extensible rule-based system with templated prerequisite checks
+    - ✅ Implemented terrain, resource, technology, and neighbor prerequisites
+    - ✅ Built improvement registry with costs and build times
+    - ✅ Strong typing and testable architecture
+- [x] Underground/above-ground/orbital layers
+    - ✅ Designed multi-layer tile system supporting 4 layers (Underground/Surface/Air/Space)
+    - ✅ Layer-specific properties (density, accessibility, improvements, resources)
+    - ✅ Movement costs between layers with transition rules
+    - ✅ Layer excavation and construction mechanics
+- [x] Dynamic tile ownership with overlapping claims
+    - ✅ Multiple ownership claims per tile with strength and type (Legal/Cultural/Economic/Military)
+    - ✅ Influence zones with distance-based decay
+    - ✅ Primary ownership calculation and contested tile detection
+    - ✅ Temporal claim tracking with establishment times
+- [x] Cultural influence spreading algorithm
+    - ✅ Cultural traits system (Religious, Artistic, Scientific, Commercial, etc.)
+    - ✅ Distance-based influence decay with terrain modifiers
+    - ✅ Cultural dominance and contested culture detection
+    - ✅ Temporal decay and influence source management
+- [x] Supply chain pathfinding between tiles
+    - ✅ A* pathfinding algorithm optimized for supply routing
+    - ✅ Supply nodes (Producer/Consumer/Storage/Hub) with capacity management
+    - ✅ Route optimization with congestion detection and flow simulation
+    - ✅ Resource-specific supply chains with bottleneck analysis
 
 ### Camera and Controls
 - [x] Smooth zoom from space to ground level
