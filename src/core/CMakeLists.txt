@@ -18,6 +18,9 @@ target_compile_features(core
         cxx_std_23
 )
 
+# Add logging subsystem
+add_subdirectory(log)
+
 # Enable SIMD optimizations (platform-specific)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
