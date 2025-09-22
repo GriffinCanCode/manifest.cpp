@@ -77,12 +77,12 @@ public:
 // These are the ONLY macros in the system - kept minimal for performance
 
 #define LOG_TRACE(...) \
-    if constexpr (::Manifest::Core::Log::should_log<::Manifest::Core::Log::Level::Trace>(::Manifest::Core::Log::Global::get().get_level())) \
-        ::Manifest::Core::Log::Global::trace(__VA_ARGS__)
+    do { if (::Manifest::Core::Log::Global::get().should_log(::Manifest::Core::Log::Level::Trace)) \
+        ::Manifest::Core::Log::Global::trace(__VA_ARGS__); } while(0)
 
 #define LOG_DEBUG(...) \
-    if constexpr (::Manifest::Core::Log::should_log<::Manifest::Core::Log::Level::Debug>(::Manifest::Core::Log::Global::get().get_level())) \
-        ::Manifest::Core::Log::Global::debug(__VA_ARGS__)
+    do { if (::Manifest::Core::Log::Global::get().should_log(::Manifest::Core::Log::Level::Debug)) \
+        ::Manifest::Core::Log::Global::debug(__VA_ARGS__); } while(0)
 
 #define LOG_INFO(...) \
     ::Manifest::Core::Log::Global::info(__VA_ARGS__)

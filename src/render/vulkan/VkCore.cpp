@@ -66,6 +66,7 @@ bool Instance::setup_debug_messenger() {
         debug_messenger_ = instance_->createDebugUtilsMessengerEXTUnique(create_info).value;
         return true;
     } catch (const std::exception& e) {
+        // Note: Would use LOG_ERROR here but avoiding include dependencies for now
         std::cerr << "Failed to setup debug messenger: " << e.what() << std::endl;
         return false;
     }

@@ -86,7 +86,8 @@ find_package(glfw3 REQUIRED)
 find_package(Lua REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(PkgConfig REQUIRED)
-find_package(fmt REQUIRED)
+# fmt library is optional - using std::format for C++23
+# find_package(fmt REQUIRED)
 
 # Configure Vulkan support
 if(Vulkan_FOUND)

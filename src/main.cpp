@@ -6,6 +6,7 @@
 #include "core/math/Vector.hpp"
 #include "core/time/Time.hpp"
 #include "core/types/Types.hpp"
+#include "core/log/Log.hpp"
 #include "render/common/Camera.hpp"
 #include "world/terrain/Generator.hpp"
 #include "world/tiles/Map.hpp"
@@ -235,8 +236,19 @@ void demonstrate_time_system() {
 
 int main() {
     try {
+        // Initialize logging system with multi-sink setup
+        auto multi_sink = std::make_shared<Manifest::Core::Log::MultiSink>();
+        multi_sink->add_sink(std::make_shared<Manifest::Core::Log::ConsoleSink>(true));
+        multi_sink->add_sink(std::make_shared<Manifest::Core::Log::FileSink>("manifest_engine.log"));
+        
+        auto global_logger = Manifest::Core::Log::Registry::create("Manifest", std::dynamic_pointer_cast<Manifest::Core::Log::Sink>(multi_sink));
+        Manifest::Core::Log::Global::set(std::move(global_logger));
+
+        LOG_INFO("=== Manifest Engine Initialization ===");
+        
         print_banner();
 
+        // LOG_DEBUG("Running system demonstrations...");
         demonstrate_strong_types();
         demonstrate_math_system();
         demonstrate_memory_system();
@@ -244,19 +256,18 @@ int main() {
         demonstrate_camera_system();
         demonstrate_time_system();
 
-        std::cout << "🎉 All systems operational! The Manifest Engine foundation is complete.\n"
-                  << std::endl;
-        std::cout << "Next steps:\n";
-        std::cout << "  • Implement economic simulation\n";
-        std::cout << "  • Add government and politics systems\n";
-        std::cout << "  • Create military mechanics\n";
-        std::cout << "  • Build UI framework\n";
-        std::cout << "  • Add AI opponents\n";
-        std::cout << "  • Implement networking\n" << std::endl;
+        LOG_INFO("🎉 All systems operational! The Manifest Engine foundation is complete.");
+        LOG_INFO("Next steps:");
+        LOG_INFO("  • Implement economic simulation");
+        LOG_INFO("  • Add government and politics systems");
+        LOG_INFO("  • Create military mechanics");
+        LOG_INFO("  • Build UI framework");
+        LOG_INFO("  • Add AI opponents");
+        LOG_INFO("  • Implement networking");
 
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        LOG_FATAL("Unhandled exception: {}", e.what());
         return 1;
     }
 }

@@ -138,11 +138,11 @@ public:
 
 // Multi-sink for broadcasting to multiple destinations
 class MultiSink final : public Sink {
-    std::vector<std::unique_ptr<Sink>> sinks_;
+    std::vector<std::shared_ptr<Sink>> sinks_;
     mutable std::mutex mutex_;
 
 public:
-    void add_sink(std::unique_ptr<Sink> sink) {
+    void add_sink(std::shared_ptr<Sink> sink) {
         std::lock_guard<std::mutex> lock(mutex_);
         sinks_.emplace_back(std::move(sink));
     }

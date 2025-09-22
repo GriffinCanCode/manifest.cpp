@@ -1,18 +1,11 @@
 # Modern C++23 Logging System
 cmake_minimum_required(VERSION 3.28)
 
-# Find fmt library for high-performance formatting
-find_package(fmt REQUIRED)
-
-# Logging library target
+# Logging library target - header-only using std::format
 add_library(log INTERFACE)
 
 target_include_directories(log INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(log INTERFACE
-    fmt::fmt
 )
 
 target_compile_features(log INTERFACE
