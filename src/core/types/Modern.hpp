@@ -53,42 +53,28 @@ public:
     Result() : has_value_(true), value_() {}
 
     // Value constructors
-    template<typename = std::enable_if_t<std::is_copy_constructible<T>::value>>
     Result(const T& value) : has_value_(true), value_(value) {}
-    
-    template<typename = std::enable_if_t<std::is_move_constructible<T>::value>>
     Result(T&& value) : has_value_(true), value_(std::move(value)) {}
 
     // Error constructors  
-    template<typename = std::enable_if_t<std::is_copy_constructible<E>::value>>
     Result(const E& error) : has_value_(false), error_(error) {}
-    
-    template<typename = std::enable_if_t<std::is_move_constructible<E>::value>>
     Result(E&& error) : has_value_(false), error_(std::move(error)) {}
 
     // Copy constructor
     Result(const Result& other) : has_value_(other.has_value_) {
         if (has_value_) {
-            if constexpr (std::is_copy_constructible<T>::value) {
-                new (&value_) T(other.value_);
-            }
+            new (&value_) T(other.value_);
         } else {
-            if constexpr (std::is_copy_constructible<E>::value) {
-                new (&error_) E(other.error_);
-            }
+            new (&error_) E(other.error_);
         }
     }
 
     // Move constructor
     Result(Result&& other) noexcept : has_value_(other.has_value_) {
         if (has_value_) {
-            if constexpr (std::is_move_constructible<T>::value) {
-                new (&value_) T(std::move(other.value_));
-            }
+            new (&value_) T(std::move(other.value_));
         } else {
-            if constexpr (std::is_move_constructible<E>::value) {
-                new (&error_) E(std::move(other.error_));
-            }
+            new (&error_) E(std::move(other.error_));
         }
     }
 
@@ -177,10 +163,7 @@ public:
     Result() : has_value_(true), dummy_(0) {}
 
     // Error constructors
-    template<typename = std::enable_if_t<std::is_copy_constructible<E>::value>>
     Result(const E& error) : has_value_(false), error_(error) {}
-    
-    template<typename = std::enable_if_t<std::is_move_constructible<E>::value>>
     Result(E&& error) : has_value_(false), error_(std::move(error)) {}
 
     // Copy constructor

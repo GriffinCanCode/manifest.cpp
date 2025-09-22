@@ -51,6 +51,7 @@ Result<void> VulkanRenderer::initialize() {
         }
         
         // TODO: Create swapchain (requires window surface)
+        // Window integration available via UI::Window::Integration namespace
         
         initialized_ = true;
         std::cout << "Vulkan renderer initialized successfully" << std::endl;

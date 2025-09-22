@@ -1,5 +1,6 @@
 #include "common/Renderer.hpp"
 #include "opengl/OpenGL.hpp"
+#include "../ui/window/Surface.hpp"
 
 // Only include Vulkan if available
 #ifdef VULKAN_AVAILABLE
