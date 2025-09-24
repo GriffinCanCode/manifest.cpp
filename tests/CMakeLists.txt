@@ -3,7 +3,8 @@ include(FetchContent)
 # Fetch Google Test
 FetchContent_Declare(
     googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50f33f9142a5612036ca7fcfdcd38f.zip
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.14.0
 )
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -22,6 +23,7 @@ target_link_libraries(test_utils
         core
         world
         render
+        window
 )
 
 target_include_directories(test_utils 
@@ -40,6 +42,4 @@ add_subdirectory(performance)
 
 # Test discovery
 include(GoogleTest)
-gtest_discover_tests(unit_tests)
-gtest_discover_tests(integration_tests)
-gtest_discover_tests(performance_tests)
+# gtest_discover_tests will be called in subdirectories after targets are defined

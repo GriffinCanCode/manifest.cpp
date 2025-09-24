@@ -25,11 +25,7 @@ class SurfaceFactory {
 public:
     virtual ~SurfaceFactory() = default;
 
-    // Vulkan surface creation
-    [[nodiscard]] virtual SurfaceResult<void*> 
-    create_vulkan_surface(const Window& window, void* instance) const = 0;
-    
-    // OpenGL context management
+    // OpenGL context management only
     [[nodiscard]] virtual SurfaceResult<void> 
     make_opengl_current(const Window& window) const = 0;
     

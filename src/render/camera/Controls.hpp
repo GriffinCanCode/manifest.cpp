@@ -26,6 +26,8 @@ using UI::Window::MouseButton;
 using UI::Window::Modifier;
 // using UI::Window::Action;  // Avoided due to name collision
 
+namespace Controls {
+
 // Strong typing for control parameters
 struct SpeedTag {};
 struct SensitivityTag {};
@@ -137,11 +139,11 @@ public:
     }
     
 private:
-    Result<void, std::string> handle_key_event(const KeyEvent& event, Core::Graphics::Camera& camera) noexcept;
-    Result<void, std::string> handle_mouse_button_event(const MouseButtonEvent& event, Core::Graphics::Camera& camera) noexcept;
-    Result<void, std::string> handle_mouse_move_event(const MouseMoveEvent& event, Core::Graphics::Camera& camera) noexcept;
-    Result<void, std::string> handle_scroll_event(const ScrollEvent& event, Core::Graphics::Camera& camera) noexcept;
-    Result<void, std::string> handle_window_resize_event(const WindowResizeEvent& event) noexcept;
+    Result<void, std::string> handle_key_event(const UI::Window::KeyEvent& event, Core::Graphics::Camera& camera) noexcept;
+    Result<void, std::string> handle_mouse_button_event(const UI::Window::MouseButtonEvent& event, Core::Graphics::Camera& camera) noexcept;
+    Result<void, std::string> handle_mouse_move_event(const UI::Window::MouseMoveEvent& event, Core::Graphics::Camera& camera) noexcept;
+    Result<void, std::string> handle_scroll_event(const UI::Window::ScrollEvent& event, Core::Graphics::Camera& camera) noexcept;
+    Result<void, std::string> handle_window_resize_event(const UI::Window::WindowResizeEvent& event) noexcept;
     
     void process_continuous_input(Core::Graphics::Camera& camera, DeltaTime dt) noexcept;
     void check_edge_scrolling(Vec2f mouse_pos) noexcept;
@@ -157,5 +159,7 @@ namespace Factory {
     Controls free() noexcept;        // FPS-style free camera  
     Controls cinematic() noexcept;   // Automated cinematic camera
 }
+
+} // namespace Controls
 
 } // namespace Manifest::Render::CameraSystem

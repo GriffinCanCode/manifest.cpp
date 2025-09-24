@@ -21,3 +21,7 @@ target_compile_features(performance_tests
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(performance_tests PRIVATE -O3 -DNDEBUG)
 endif()
+
+# Test discovery
+include(GoogleTest)
+gtest_discover_tests(performance_tests)

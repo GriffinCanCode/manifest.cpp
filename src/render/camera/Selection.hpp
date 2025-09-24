@@ -17,6 +17,8 @@ using Core::Math::Vec2f;
 using Core::Math::Vec2i;
 using Core::Math::Vec3f;
 
+namespace Selection {
+
 // Strong typing for selection system
 struct SelectionTag {};
 using SelectionId = StrongId<SelectionTag, std::uint32_t>;
@@ -215,5 +217,7 @@ namespace Render {
     void draw_selection_box(const Box& box, const BoxStyle& style = {});
     void draw_selection_highlight(Vec2i position, float radius, const Vec3f& color = {1.0f, 1.0f, 0.0f});
 }
+
+} // namespace Selection
 
 } // namespace Manifest::Render::CameraSystem

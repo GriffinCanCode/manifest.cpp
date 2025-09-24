@@ -80,7 +80,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -flto")
 
 # Find packages
-find_package(Vulkan)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(Lua REQUIRED)
@@ -88,16 +87,6 @@ find_package(SQLite3 REQUIRED)
 find_package(PkgConfig REQUIRED)
 # fmt library is optional - using std::format for C++23
 # find_package(fmt REQUIRED)
-
-# Configure Vulkan support
-if(Vulkan_FOUND)
-    set(VULKAN_AVAILABLE TRUE)
-    add_compile_definitions(VULKAN_AVAILABLE=1)
-    message(STATUS "Vulkan found: ${Vulkan_VERSION}")
-else()
-    set(VULKAN_AVAILABLE FALSE)
-    message(WARNING "Vulkan SDK not found - Vulkan renderer will be disabled, falling back to OpenGL")
-endif()
 
 pkg_check_modules(FREETYPE REQUIRED freetype2)
 pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
@@ -112,13 +101,18 @@ add_subdirectory(src/ai)
 add_subdirectory(src/net)
 add_subdirectory(src/tools)
 
-# Tests - temporarily disabled
-#enable_testing()
-#add_subdirectory(tests)
+# Tests 
+enable_testing()
+add_subdirectory(tests)
 
 # Main executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
+)
+
+# Debug renderer executable for isolating rendering issues
+add_executable(debug_renderer
+    debug_renderer.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -132,6 +126,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     glfw
 )
+
+target_link_libraries(debug_renderer PRIVATE
+    core
+    render
+    world
+    ui
+    OpenGL::GL
+    glfw
+)
+
+# Note: Vulkan support removed - using OpenGL only
 
 # Assets
 file(COPY assets DESTINATION ${CMAKE_BINARY_DIR})

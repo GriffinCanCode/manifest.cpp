@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include "ResultHelper.hpp"
 
 namespace Manifest::Render::CameraSystem {
 
@@ -26,7 +27,7 @@ System::System(std::unique_ptr<Cursor::IProvider> cursor_provider)
 
 Core::Modern::Result<void, std::string> System::handle_event(const UI::Window::Event& event) noexcept {
     if (!active_) {
-        return Core::Modern::Result<void, std::string>::success();
+        return success<void, std::string>();
     }
     
     // Handle events in priority order
@@ -47,7 +48,7 @@ Core::Modern::Result<void, std::string> System::handle_event(const UI::Window::E
     // 2. Camera controls (if not consumed by selection)
     if (!selection_manager_.is_box_selecting()) {
         auto controls_result = controls_.handle_event(event, camera_);
-        if (!controls_result.is_success()) {
+        if (!controls_result.has_value()) {
             return controls_result;
         }
     }
@@ -55,7 +56,7 @@ Core::Modern::Result<void, std::string> System::handle_event(const UI::Window::E
     // 3. Update cursor context after event processing
     sync_cursor_context();
     
-    return Core::Modern::Result<void, std::string>::success();
+    return success<void, std::string>();
 }
 
 void System::update(float delta_time) noexcept {
@@ -72,17 +73,17 @@ void System::update(float delta_time) noexcept {
 
 void System::setup_orbital_controls() noexcept {
     controls_ = Controls::Factory::orbital();
-    controls_.set_mode(ControlMode::Orbital);
+    controls_.set_mode(Controls::ControlMode::Orbital);
 }
 
 void System::setup_free_controls() noexcept {
     controls_ = Controls::Factory::free();
-    controls_.set_mode(ControlMode::Free);
+    controls_.set_mode(Controls::ControlMode::Free);
 }
 
 void System::setup_cinematic_controls() noexcept {
     controls_ = Controls::Factory::cinematic();
-    controls_.set_mode(ControlMode::Cinematic);
+    controls_.set_mode(Controls::ControlMode::Cinematic);
 }
 
 void System::sync_cursor_context() noexcept {
@@ -90,7 +91,7 @@ void System::sync_cursor_context() noexcept {
     
     // Get mouse position
     auto pos_result = cursor_manager_.position();
-    if (pos_result.is_success()) {
+    if (pos_result.has_value()) {
         context.mouse_position = pos_result.value();
     }
     

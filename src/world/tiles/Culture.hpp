@@ -41,7 +41,7 @@ struct CulturalInfluence {
     void decay(GameTurn current_turn) noexcept {
         GameTurn age = current_turn - established_turn;
         float decay_factor = std::exp(-decay_rate * static_cast<float>(age));
-        strength = Influence{strength.value() * decay_factor};
+        strength = Influence{strength.value() * static_cast<double>(decay_factor)};
     }
     
     constexpr bool is_significant() const noexcept {
@@ -327,14 +327,9 @@ public:
         spread_system_.simulate_spread(current_turn_);
         
         // Clean up empty cultures
-        auto it = std::remove_if(tile_cultures_.begin(), tile_cultures_.end(),
-            [](const auto& pair) {
-                return pair.second.influences().empty();
-            });
-        
-        if (it != tile_cultures_.end()) {
-            tile_cultures_.erase(it, tile_cultures_.end());
-        }
+        std::erase_if(tile_cultures_, [](const auto& pair) {
+            return pair.second.influences().empty();
+        });
     }
     
     // Analysis

@@ -185,7 +185,7 @@ public:
         
         // Exponential decay with distance
         float decay_factor = std::exp(-decay_rate_ * distance);
-        return Influence{base_strength_.value() * decay_factor};
+        return Influence{base_strength_.value() * static_cast<double>(decay_factor)};
     }
     
     bool affects_tile(const HexCoordinate& coord) const noexcept {

@@ -42,7 +42,7 @@ struct Snapshot {
     float aspect_ratio{16.0f / 9.0f};
     float near_plane{0.1f};
     float far_plane{1000.0f};
-    ControlMode control_mode{ControlMode::Orbital};
+    Controls::ControlMode control_mode{Controls::ControlMode::Orbital};
     std::chrono::system_clock::time_point timestamp{};
     std::string description{};
     
@@ -50,7 +50,7 @@ struct Snapshot {
     Snapshot() = default;
     
     // Construct from camera
-    explicit Snapshot(const Core::Graphics::Camera& camera, ControlMode mode = ControlMode::Orbital, 
+    explicit Snapshot(const Core::Graphics::Camera& camera, Controls::ControlMode mode = Controls::ControlMode::Orbital, 
                      std::string desc = {}) noexcept;
     
     // Apply to camera
@@ -97,6 +97,7 @@ public:
 };
 
 // State manager for save/restore functionality  
+namespace State {
 class StateManager {
     std::unordered_map<std::string, Snapshot> saved_states_;
     std::vector<std::string> state_history_;
@@ -109,7 +110,7 @@ public:
     
     // State management
     Result<void, std::string> save_state(const std::string& name, const Core::Graphics::Camera& camera, 
-                           ControlMode mode = ControlMode::Orbital, 
+                           Controls::ControlMode mode = Controls::ControlMode::Orbital, 
                            const std::string& description = {}) noexcept;
     
     Result<void, std::string> restore_state(const std::string& name, Core::Graphics::Camera& camera) noexcept;
@@ -123,7 +124,7 @@ public:
     Result<Snapshot, std::string> get_snapshot(const std::string& name) const noexcept;
     
     // Auto-save functionality
-    Result<void, std::string> auto_save(const Core::Graphics::Camera& camera, ControlMode mode = ControlMode::Orbital) noexcept;
+    Result<void, std::string> auto_save(const Core::Graphics::Camera& camera, Controls::ControlMode mode = Controls::ControlMode::Orbital) noexcept;
     
     // History management
     std::vector<std::string> get_history() const noexcept { return state_history_; }
@@ -169,7 +170,7 @@ class StateGuard {
     
 public:
     StateGuard(StateManager& manager, const std::string& name, const Core::Graphics::Camera& camera, 
-               bool auto_restore = true, ControlMode mode = ControlMode::Orbital,
+               bool auto_restore = true, Controls::ControlMode mode = Controls::ControlMode::Orbital,
                const std::string& description = {}) noexcept;
     
     ~StateGuard() noexcept;
@@ -222,9 +223,11 @@ private:
     float interpolate_scalar(float start, float end, float t) const noexcept;
 };
 
+} // namespace State
+
 // Preset state configurations
 namespace Presets {
-    StateManager create_default_manager() noexcept;
+    State::StateManager create_default_manager() noexcept;
     
     // Common camera positions
     Snapshot world_overview() noexcept;
@@ -233,7 +236,7 @@ namespace Presets {
     Snapshot cinematic_angle() noexcept;
     
     // Quick save/restore for common operations
-    void save_common_states(StateManager& manager, const Core::Graphics::Camera& camera) noexcept;
+    void save_common_states(State::StateManager& manager, const Core::Graphics::Camera& camera) noexcept;
 }
 
 } // namespace Manifest::Render::CameraSystem

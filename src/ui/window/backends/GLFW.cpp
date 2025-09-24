@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <cstring>
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 namespace Manifest {
@@ -67,11 +66,12 @@ Result<void> GLFWWindow::initialize(const WindowDesc& desc) {
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, desc.transparent ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FLOATING, desc.always_on_top ? GLFW_TRUE : GLFW_FALSE);
     
-    // Default to OpenGL context for compatibility
+    // Configure OpenGL context since we're OpenGL-only now
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // Required on macOS
 
     // Create window
     window_ = glfwCreateWindow(desc.size.x(), desc.size.y(), 
@@ -81,6 +81,12 @@ Result<void> GLFWWindow::initialize(const WindowDesc& desc) {
     if (!window_) {
         return WindowError::CreationFailed;
     }
+
+    // Make the OpenGL context current
+    glfwMakeContextCurrent(window_);
+    
+    // Enable vsync
+    glfwSwapInterval(1);
 
     // Set position
     glfwSetWindowPos(window_, desc.position.x(), desc.position.y());
@@ -114,6 +120,7 @@ void GLFWWindow::shutdown() {
 
 void GLFWWindow::poll_events() {
     // Events are polled globally by GLFW
+    glfwPollEvents();
 }
 
 void GLFWWindow::swap_buffers() {
@@ -201,20 +208,7 @@ Result<void> GLFWWindow::close() {
     return {};
 }
 
-Result<void*> GLFWWindow::create_vulkan_surface(void* instance) const {
-    if (!window_) return WindowError::InvalidState;
-    
-#ifdef VULKAN_AVAILABLE
-    VkSurfaceKHR surface;
-    VkResult result = glfwCreateWindowSurface(static_cast<VkInstance>(instance), 
-                                             window_, nullptr, &surface);
-    if (result == VK_SUCCESS) {
-        return static_cast<void*>(surface);
-    }
-#endif
-    
-    return WindowError::CreationFailed;
-}
+// Vulkan surface creation removed - OpenGL only
 
 Result<void> GLFWWindow::make_opengl_context_current() const {
     if (!window_) return WindowError::InvalidState;
@@ -399,15 +393,7 @@ void GLFWFactory::error_callback(int error, const char* description) {
     std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
 
-// GLFWSurfaceFactory Implementation  
-SurfaceResult<void*> GLFWSurfaceFactory::create_vulkan_surface(
-    const Window& window, void* instance) const {
-    auto result = window.create_vulkan_surface(instance);
-    if (!result) {
-        return SurfaceError::CreationFailed;
-    }
-    return result.value();
-}
+// GLFWSurfaceFactory Implementation - Vulkan surface creation removed
 
 SurfaceResult<void> GLFWSurfaceFactory::make_opengl_current(const Window& window) const {
     auto result = window.make_opengl_context_current();

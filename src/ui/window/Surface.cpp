@@ -15,11 +15,11 @@ SurfaceResult<void*> create_surface_for_renderer(
     
     switch (api) {
         case API::Vulkan: {
-            auto result = window.create_vulkan_surface(context);
+            auto result = window.make_opengl_context_current();
             if (!result) {
                 return SurfaceError::CreationFailed;
             }
-            return result.value();
+            return static_cast<void*>(const_cast<Window*>(&window));
         }
             
         case API::OpenGL: {
@@ -54,9 +54,8 @@ std::vector<const char*> get_required_vulkan_extensions() {
 bool is_api_supported(const Window& window, API api) {
     switch (api) {
         case API::Vulkan: {
-            // Try to create a dummy surface to test support
-            auto surface_result = window.create_vulkan_surface(nullptr);
-            return surface_result.has_value();
+            // Vulkan support removed - return false
+            return false;
         }
         
         case API::OpenGL: {

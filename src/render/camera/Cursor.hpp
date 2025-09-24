@@ -12,6 +12,8 @@ using Core::Types::StrongId;
 using Core::Modern::Result;
 using Core::Math::Vec2i;
 
+namespace Cursor {
+
 // Strong typing for cursor management
 struct CursorTag {};
 using CursorId = StrongId<CursorTag, std::uint8_t>;
@@ -164,5 +166,7 @@ namespace Util {
     bool is_resize_cursor(Type type) noexcept;
     bool is_interactive_cursor(Type type) noexcept;
 }
+
+} // namespace Cursor
 
 } // namespace Manifest::Render::CameraSystem

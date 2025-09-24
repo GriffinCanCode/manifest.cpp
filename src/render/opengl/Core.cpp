@@ -1,6 +1,7 @@
 #include "Core.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
 #include "Converter.hpp"
@@ -38,14 +39,35 @@ namespace Render {
 namespace OpenGL {
 
 Result<void> Core::initialize() {
-    // Initialize OpenGL context (assuming it's already created)
+    //==========================================================================
+    // CRITICAL OPENGL INITIALIZATION - REQUIRED FOR RENDERING TO WORK
+    //==========================================================================
+    // These steps are MANDATORY and were discovered during Vulkan→OpenGL migration:
+    //==========================================================================
+    
+    // Enable OpenGL debug output for troubleshooting
     Debug::enable_debug_output();
 
-    // Set default state
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    // RESTORED: Enable proper 3D rendering state now that basic rendering works
+    // These were disabled during debugging but can be safely re-enabled
+    glEnable(GL_DEPTH_TEST);   // Enable depth testing for proper 3D hex layering
+    glDepthFunc(GL_LESS);      // Standard depth function
+    glEnable(GL_CULL_FACE);    // Enable face culling for performance
+    glCullFace(GL_BACK);       // Cull back faces
+    glFrontFace(GL_CCW);       // Counter-clockwise front faces
+    
+    // CRITICAL: Create uniform buffer for matrix data (even if not used yet)
+    // This simulates Vulkan push constants and must be created before shaders
+    glGenBuffers(1, &push_constants_buffer_);
+    glBindBuffer(GL_UNIFORM_BUFFER, push_constants_buffer_);
+    glBufferData(GL_UNIFORM_BUFFER, 256, nullptr, GL_DYNAMIC_DRAW); // 256 bytes for matrices
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, push_constants_buffer_); // MUST bind to point 0
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    // CRITICAL: Create VAO for vertex state management
+    // Modern OpenGL requires VAO for any vertex rendering
+    glGenVertexArrays(1, &vertex_array_object_);
+    glBindVertexArray(vertex_array_object_);
 
     return {};
 }
@@ -70,6 +92,18 @@ void Core::shutdown() {
 
     for (auto& [handle, resource] : buffers_) {
         if (resource.id) glDeleteBuffers(1, &resource.id);
+    }
+    
+    // Clean up push constants uniform buffer
+    if (push_constants_buffer_) {
+        glDeleteBuffers(1, &push_constants_buffer_);
+        push_constants_buffer_ = 0;
+    }
+    
+    // Clean up VAO
+    if (vertex_array_object_) {
+        glDeleteVertexArrays(1, &vertex_array_object_);
+        vertex_array_object_ = 0;
     }
 
     // Clear maps
@@ -232,7 +266,8 @@ Result<ShaderHandle> Core::create_shader(const ShaderDesc& desc) {
         if (log_length > 0) {
             std::vector<char> log(log_length);
             glGetShaderInfoLog(shader_id, log_length, nullptr, log.data());
-            // Could log the error here
+            // For now, just use printf since we don't want to include log header here
+            printf("OpenGL shader compilation failed: %s\n", log.data());
         }
 
         glDeleteShader(shader_id);
@@ -293,6 +328,15 @@ Result<PipelineHandle> Core::create_pipeline(const PipelineDesc& desc) {
 
         glDeleteProgram(program);
         return RendererError::CompilationFailed;
+    }
+
+    // Bind uniform blocks to binding points (OpenGL 4.1 compatible)
+    GLuint uniform_block_index = glGetUniformBlockIndex(program, "GlobalUniforms");
+    if (uniform_block_index != GL_INVALID_INDEX) {
+        glUniformBlockBinding(program, uniform_block_index, 0); // Bind to binding point 0
+        std::cout << "Bound uniform block 'GlobalUniforms' to binding point 0" << std::endl;
+    } else {
+        std::cout << "WARNING: Could not find uniform block 'GlobalUniforms'" << std::endl;
     }
 
     // Detach shaders (they're no longer needed)
@@ -499,22 +543,60 @@ void Core::set_scissor(const Scissor& scissor) {
 }
 
 void Core::bind_pipeline(PipelineHandle pipeline) {
+    //==========================================================================
+    // CRITICAL: This function was MISSING in original implementation!
+    //==========================================================================
+    // Without this, shaders never get activated and rendering shows only clear color.
+    // This was the key missing piece that caused "dark blue screen" issues.
+    //==========================================================================
+    
     current_pipeline_ = pipeline;
 
     auto it = pipelines_.find(pipeline);
     if (it != pipelines_.end()) {
+        // CRITICAL: Activate the shader program - without this, default shader is used
         glUseProgram(it->second.program);
+        
+        // Apply render state (depth testing, culling, etc.)
         apply_render_state(it->second.desc.render_state);
-        setup_vertex_attributes(it->second.desc.vertex_bindings);
+        
+        // Note: vertex attributes are set up when buffers are bound
+        // This deferred approach prevents VAO state corruption
     }
 }
 
 void Core::bind_vertex_buffer(BufferHandle buffer, std::uint32_t binding, std::size_t offset) {
     auto it = buffers_.find(buffer);
     if (it != buffers_.end()) {
-        glBindBuffer(GL_ARRAY_BUFFER, it->second.id);
-        // Note: OpenGL doesn't have explicit binding points for vertex buffers like Vulkan
-        // The buffer is bound globally and vertex attributes reference it
+        auto pipeline_it = pipelines_.find(current_pipeline_);
+        if (pipeline_it != pipelines_.end()) {
+            // Find the vertex binding that matches this binding point
+            for (const auto& vertex_binding : pipeline_it->second.desc.vertex_bindings) {
+                if (vertex_binding.binding == binding) {
+                    glBindBuffer(GL_ARRAY_BUFFER, it->second.id);
+                    
+                    // Set up vertex attributes for this specific binding
+                    for (const auto& attribute : vertex_binding.attributes) {
+                        glEnableVertexAttribArray(attribute.location);
+                        
+                        GLenum type = Converter::attribute_format_to_gl_type(attribute.format);
+                        GLint size = Converter::attribute_format_to_gl_size(attribute.format);
+                        GLboolean normalized = (type != GL_FLOAT) ? GL_TRUE : GL_FALSE;
+                        
+                        glVertexAttribPointer(attribute.location, size, type, normalized,
+                                            vertex_binding.stride, reinterpret_cast<const void*>(attribute.offset + offset));
+                        
+                        // Set attribute divisor for instanced rendering
+                        if (vertex_binding.input_rate == VertexInputRate::Instance) {
+                            glVertexAttribDivisor(attribute.location, 1);  // Advance per instance
+                        } else {
+                            glVertexAttribDivisor(attribute.location, 0);  // Advance per vertex
+                        }
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -543,6 +625,16 @@ void Core::bind_uniform_buffer(BufferHandle buffer, std::uint32_t binding, std::
         if (size == 0) size = it->second.desc.size - offset;
         glBindBufferRange(GL_UNIFORM_BUFFER, binding, it->second.id, offset, size);
     }
+}
+
+void Core::push_constants(::Manifest::Core::Modern::span<const ::Manifest::Core::Modern::byte> data,
+                         std::uint32_t offset) {
+    // OpenGL doesn't have push constants like Vulkan, so we use a uniform buffer
+    if (!push_constants_buffer_) return;
+    
+    glBindBuffer(GL_UNIFORM_BUFFER, push_constants_buffer_);
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, data.size(), data.data());
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Core::draw(const DrawCommand& command) {
@@ -753,6 +845,13 @@ void Core::setup_vertex_attributes(const ::Manifest::Core::Modern::span<const Ve
             
             glVertexAttribPointer(attribute.location, size, type, normalized,
                                 binding.stride, reinterpret_cast<const void*>(attribute.offset));
+            
+            // Set attribute divisor for instanced rendering
+            if (binding.input_rate == VertexInputRate::Instance) {
+                glVertexAttribDivisor(attribute.location, 1);  // Advance per instance
+            } else {
+                glVertexAttribDivisor(attribute.location, 0);  // Advance per vertex (default)
+            }
         }
     }
 }

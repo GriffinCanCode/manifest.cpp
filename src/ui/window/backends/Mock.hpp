@@ -47,8 +47,7 @@ public:
     Result<void> set_cursor_mode(CursorMode mode) override;
     Result<void> close() override;
 
-    // Surface creation (mock)
-    Result<void*> create_vulkan_surface(void* instance) const override;
+    // Surface creation (mock) - OpenGL only
     Result<void> make_opengl_context_current() const override;
     
     // Testing utilities
@@ -80,13 +79,10 @@ public:
 };
 
 class MockSurfaceFactory : public SurfaceFactory {
-    bool vulkan_supported_{true};
+    bool vulkan_supported_{false};  // Vulkan not supported anymore
     bool opengl_supported_{true};
     
 public:
-    [[nodiscard]] SurfaceResult<void*> 
-    create_vulkan_surface(const Window& window, void* instance) const override;
-    
     [[nodiscard]] SurfaceResult<void> 
     make_opengl_current(const Window& window) const override;
     

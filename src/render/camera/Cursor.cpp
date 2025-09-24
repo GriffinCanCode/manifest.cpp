@@ -5,13 +5,13 @@
 namespace Manifest::Render::CameraSystem {
 
 // Manager implementation
-Manager::Manager(std::unique_ptr<IProvider> provider) noexcept
+Cursor::Manager::Manager(std::unique_ptr<IProvider> provider) noexcept
     : provider_(std::move(provider))
     , resolver_(DefaultResolver::resolve)
 {
 }
 
-void Manager::update_context(const Context& context) noexcept {
+void Cursor::Manager::update_context(const Context& context) noexcept {
     context_ = context;
     
     if (!state_.is_locked) {
@@ -23,7 +23,7 @@ void Manager::update_context(const Context& context) noexcept {
     }
 }
 
-Result<void, std::string> Manager::set_cursor(Type type) noexcept {
+Result<void, std::string> Cursor::Manager::set_cursor(Type type) noexcept {
     if (!provider_) {
         return error<void, std::string>("No cursor provider available");
     }
@@ -34,7 +34,7 @@ Result<void, std::string> Manager::set_cursor(Type type) noexcept {
     return apply_cursor_change();
 }
 
-Result<void, std::string> Manager::show(bool visible) noexcept {
+Result<void, std::string> Cursor::Manager::show(bool visible) noexcept {
     if (!provider_) {
         return error<void, std::string>("No cursor provider available");
     }
@@ -43,12 +43,12 @@ Result<void, std::string> Manager::show(bool visible) noexcept {
     return provider_->show_cursor(visible);
 }
 
-Result<void, std::string> Manager::lock(bool locked) noexcept {
+Result<void, std::string> Cursor::Manager::lock(bool locked) noexcept {
     state_.is_locked = locked;
     return success<void, std::string>();
 }
 
-Result<Vec2i, std::string> Manager::position() const noexcept {
+Result<Vec2i, std::string> Cursor::Manager::position() const noexcept {
     if (!provider_) {
         return error<Vec2i, std::string>("No cursor provider available");
     }
@@ -56,7 +56,7 @@ Result<Vec2i, std::string> Manager::position() const noexcept {
     return provider_->get_position();
 }
 
-Result<void, std::string> Manager::set_position(Vec2i pos) noexcept {
+Result<void, std::string> Cursor::Manager::set_position(Vec2i pos) noexcept {
     if (!provider_) {
         return error<void, std::string>("No cursor provider available");
     }
@@ -65,7 +65,7 @@ Result<void, std::string> Manager::set_position(Vec2i pos) noexcept {
     return provider_->set_position(pos);
 }
 
-void Manager::update(float delta_time) noexcept {
+void Cursor::Manager::update(float delta_time) noexcept {
     update_transition(delta_time);
     update_auto_hide(delta_time);
     
@@ -74,24 +74,24 @@ void Manager::update(float delta_time) noexcept {
     }
 }
 
-void Manager::set_resolver(std::function<Type(const Context&)> resolver) noexcept {
+void Cursor::Manager::set_resolver(std::function<Type(const Context&)> resolver) noexcept {
     resolver_ = std::move(resolver);
 }
 
-void Manager::set_auto_hide(bool enabled, float delay) noexcept {
+void Cursor::Manager::set_auto_hide(bool enabled, float delay) noexcept {
     auto_hide_enabled_ = enabled;
     auto_hide_delay_ = delay;
     auto_hide_timer_ = 0.0f;
 }
 
-Type Manager::resolve_cursor_type() const noexcept {
+Cursor::Type Cursor::Manager::resolve_cursor_type() const noexcept {
     if (resolver_) {
         return resolver_(context_);
     }
     return Type::Default;
 }
 
-void Manager::update_transition(float delta_time) noexcept {
+void Cursor::Manager::update_transition(float delta_time) noexcept {
     if (state_.current_type != state_.target_type) {
         state_.transition_progress += transition_speed_ * delta_time;
         
@@ -102,7 +102,7 @@ void Manager::update_transition(float delta_time) noexcept {
     }
 }
 
-void Manager::update_auto_hide(float delta_time) noexcept {
+void Cursor::Manager::update_auto_hide(float delta_time) noexcept {
     if (!auto_hide_enabled_ || state_.is_locked) return;
     
     // Reset timer if mouse moved
@@ -126,7 +126,7 @@ void Manager::update_auto_hide(float delta_time) noexcept {
     }
 }
 
-Result<void, std::string> Manager::apply_cursor_change() noexcept {
+Result<void, std::string> Cursor::Manager::apply_cursor_change() noexcept {
     if (!provider_ || state_.current_type == state_.target_type) {
         return success<void, std::string>();
     }
@@ -134,7 +134,7 @@ Result<void, std::string> Manager::apply_cursor_change() noexcept {
     // Check if target type is supported
     if (!provider_->is_supported(state_.target_type)) {
         // Fallback to default cursor
-        state_.target_type = Type::Default;
+        state_.target_type = Cursor::Type::Default;
     }
     
     auto result = provider_->set_cursor(state_.target_type);
@@ -146,8 +146,11 @@ Result<void, std::string> Manager::apply_cursor_change() noexcept {
     return result;
 }
 
-// DefaultResolver implementation
+// DefaultResolver implementation  
+namespace Cursor {
 namespace DefaultResolver {
+
+// We're now inside Cursor::DefaultResolver namespace
 
 Type resolve(const Context& context) noexcept {
     // Priority order: UI > Units > Cities > Terrain
@@ -197,7 +200,7 @@ Type for_ui(const Context& context) noexcept {
     }
     
     // Would examine specific UI element type in real implementation
-    return Type::Hand;
+    return Cursor::Type::Hand;
 }
 
 Type for_unit(const Context& context) noexcept {
@@ -217,7 +220,7 @@ Type for_unit(const Context& context) noexcept {
         return Type::Hand;  // Inspect cursor
     }
     
-    return Type::Move;  // Move unit cursor
+    return Cursor::Type::Move;  // Move unit cursor
 }
 
 Type for_city(const Context& context) noexcept {
@@ -225,32 +228,33 @@ Type for_city(const Context& context) noexcept {
         return Type::NotAllowed;
     }
     
-    return Type::Hand;  // Enter city management
+    return Cursor::Type::Hand;  // Enter city management
 }
 
 } // namespace DefaultResolver
+} // namespace Cursor
 
 // MockProvider implementation
-Result<void, std::string> MockProvider::set_cursor(Type type) noexcept {
+Result<void, std::string> Cursor::MockProvider::set_cursor(Cursor::Type type) noexcept {
     current_type_ = type;
     return success<void, std::string>();
 }
 
-Result<void, std::string> MockProvider::show_cursor(bool visible) noexcept {
+Result<void, std::string> Cursor::MockProvider::show_cursor(bool visible) noexcept {
     visible_ = visible;
     return success<void, std::string>();
 }
 
-Result<Vec2i, std::string> MockProvider::get_position() const noexcept {
+Result<Vec2i, std::string> Cursor::MockProvider::get_position() const noexcept {
     return success<Vec2i, std::string>(position_);
 }
 
-Result<void, std::string> MockProvider::set_position(Vec2i pos) noexcept {
+Result<void, std::string> Cursor::MockProvider::set_position(Vec2i pos) noexcept {
     position_ = pos;
     return success<void, std::string>();
 }
 
-bool MockProvider::is_supported(Type type) const noexcept {
+bool Cursor::MockProvider::is_supported(Cursor::Type type) const noexcept {
     // Mock provider supports all cursor types
     return true;
 }
@@ -258,46 +262,46 @@ bool MockProvider::is_supported(Type type) const noexcept {
 // Utility functions
 namespace Util {
 
-std::string to_string(Type type) noexcept {
+std::string to_string(Cursor::Type type) noexcept {
     switch (type) {
-        case Type::Default: return "default";
-        case Type::Hand: return "hand";
-        case Type::Grab: return "grab";
-        case Type::Grabbing: return "grabbing";
-        case Type::Move: return "move";
-        case Type::Crosshair: return "crosshair";
-        case Type::Text: return "text";
-        case Type::Wait: return "wait";
-        case Type::NotAllowed: return "not-allowed";
-        case Type::ResizeN: return "resize-n";
-        case Type::ResizeS: return "resize-s";
-        case Type::ResizeE: return "resize-e";
-        case Type::ResizeW: return "resize-w";
-        case Type::ResizeNE: return "resize-ne";
-        case Type::ResizeNW: return "resize-nw";
-        case Type::ResizeSE: return "resize-se";
-        case Type::ResizeSW: return "resize-sw";
+        case Cursor::Type::Default: return "default";
+        case Cursor::Type::Hand: return "hand";
+        case Cursor::Type::Grab: return "grab";
+        case Cursor::Type::Grabbing: return "grabbing";
+        case Cursor::Type::Move: return "move";
+        case Cursor::Type::Crosshair: return "crosshair";
+        case Cursor::Type::Text: return "text";
+        case Cursor::Type::Wait: return "wait";
+        case Cursor::Type::NotAllowed: return "not-allowed";
+        case Cursor::Type::ResizeN: return "resize-n";
+        case Cursor::Type::ResizeS: return "resize-s";
+        case Cursor::Type::ResizeE: return "resize-e";
+        case Cursor::Type::ResizeW: return "resize-w";
+        case Cursor::Type::ResizeNE: return "resize-ne";
+        case Cursor::Type::ResizeNW: return "resize-nw";
+        case Cursor::Type::ResizeSE: return "resize-se";
+        case Cursor::Type::ResizeSW: return "resize-sw";
         default: return "unknown";
     }
 }
 
-Vec2i default_hotspot(Type type) noexcept {
+Vec2i default_hotspot(Cursor::Type type) noexcept {
     switch (type) {
-        case Type::Default:
-        case Type::Hand:
-        case Type::Wait:
-        case Type::NotAllowed:
+        case Cursor::Type::Default:
+        case Cursor::Type::Hand:
+        case Cursor::Type::Wait:
+        case Cursor::Type::NotAllowed:
             return Vec2i{0, 0};  // Top-left
             
-        case Type::Crosshair:
+        case Cursor::Type::Crosshair:
             return Vec2i{16, 16};  // Center (assuming 32x32 cursor)
             
-        case Type::Text:
+        case Cursor::Type::Text:
             return Vec2i{8, 16};  // Middle-left
             
-        case Type::Move:
-        case Type::Grab:
-        case Type::Grabbing:
+        case Cursor::Type::Move:
+        case Cursor::Type::Grab:
+        case Cursor::Type::Grabbing:
             return Vec2i{16, 16};  // Center
             
         default:
@@ -305,16 +309,16 @@ Vec2i default_hotspot(Type type) noexcept {
     }
 }
 
-bool is_resize_cursor(Type type) noexcept {
-    return type >= Type::ResizeN && type <= Type::ResizeSW;
+bool is_resize_cursor(Cursor::Type type) noexcept {
+    return type >= Cursor::Type::ResizeN && type <= Cursor::Type::ResizeSW;
 }
 
-bool is_interactive_cursor(Type type) noexcept {
-    return type == Type::Hand || 
-           type == Type::Grab || 
-           type == Type::Grabbing ||
-           type == Type::Move ||
-           type == Type::Crosshair;
+bool is_interactive_cursor(Cursor::Type type) noexcept {
+    return type == Cursor::Type::Hand || 
+           type == Cursor::Type::Grab || 
+           type == Cursor::Type::Grabbing ||
+           type == Cursor::Type::Move ||
+           type == Cursor::Type::Crosshair;
 }
 
 } // namespace Util

@@ -89,11 +89,7 @@ Result<void> MockWindow::close() {
     return {};
 }
 
-Result<void*> MockWindow::create_vulkan_surface(void* instance) const {
-    record_call("create_vulkan_surface");
-    // Return dummy pointer for testing
-    return static_cast<void*>(const_cast<MockWindow*>(this));
-}
+// Vulkan surface creation removed - OpenGL only
 
 Result<void> MockWindow::make_opengl_context_current() const {
     record_call("make_opengl_context_current");
@@ -131,16 +127,7 @@ void MockEventSystem::process_queued_events() {
     }
 }
 
-// MockSurfaceFactory Implementation
-SurfaceResult<void*> MockSurfaceFactory::create_vulkan_surface(
-    const Window& window, void* instance) const {
-    if (!vulkan_supported_) {
-        return SurfaceError::BackendUnavailable;
-    }
-    
-    // Return dummy pointer
-    return static_cast<void*>(const_cast<Window*>(&window));
-}
+// MockSurfaceFactory Implementation - Vulkan surface creation removed
 
 SurfaceResult<void> MockSurfaceFactory::make_opengl_current(const Window& window) const {
     if (!opengl_supported_) {

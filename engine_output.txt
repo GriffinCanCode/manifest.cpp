@@ -1,0 +1,35 @@
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] === Manifest Engine Startup ===[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ╔═══════════════════════════════════════════════╗[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ║              MANIFEST ENGINE                  ║[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ║         Grand Strategy Empire Builder         ║[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ║                                               ║[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ║  Modern C++23 • Vulkan/OpenGL • Procedural   ║[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] ╚═══════════════════════════════════════════════╝[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [Manifest] Initializing window system...[0m
+[0;32m[2025-09-21 21:05:42.738] [INFO] [WindowManager] Initializing window manager[0m
+[0;32m[2025-09-21 21:05:42.806] [INFO] [WindowManager] Window manager initialized successfully[0m
+[0;32m[2025-09-21 21:05:42.806] [INFO] [WindowManager] Creating window: 'Manifest Engine - Grand Strategy Empire Builder' (1920x1080)[0m
+[0;32m[2025-09-21 21:05:42.881] [INFO] [WindowManager] Window created successfully (handle: 1)[0m
+[0;32m[2025-09-21 21:05:42.881] [INFO] [Manifest] Main window created: 1920x1080[0m
+[0;32m[2025-09-21 21:05:42.881] [INFO] [Manifest] Window properties: visible=1, should_close=0, native_handle=1[0m
+[0;32m[2025-09-21 21:05:42.882] [INFO] [Manifest] Window set to visible state[0m
+[0;32m[2025-09-21 21:05:42.882] [INFO] [Manifest] Making OpenGL context current...[0m
+[0;32m[2025-09-21 21:05:42.882] [INFO] [Manifest] Generating procedural world...[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Generated 7651 tiles in 27ms[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Initializing advanced RTS camera system...[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Advanced RTS camera system initialized with orbital controls[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Initializing renderer...[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Renderer initialized successfully[0m
+[0;32m[2025-09-21 21:05:42.910] [INFO] [Manifest] Initializing procedural hex renderer for world visualization...[0m
+[0;31m[2025-09-21 21:05:42.910] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - trying vertex shader path: assets/shaders/hex_procedural.vert[0m
+[0;31m[2025-09-21 21:05:42.910] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - found vertex shader at: assets/shaders/hex_procedural.vert[0m
+[0;31m[2025-09-21 21:05:42.910] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - trying fragment shader path: assets/shaders/hex_procedural.frag[0m
+[0;31m[2025-09-21 21:05:42.910] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - found fragment shader at: assets/shaders/hex_procedural.frag[0m
+[0;31m[2025-09-21 21:05:42.910] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - creating vertex shader with 3230 bytes[0m
+[0;31m[2025-09-21 21:05:42.911] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - vertex shader created successfully[0m
+[0;31m[2025-09-21 21:05:42.911] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - creating fragment shader with 3678 bytes[0m
+[0;31m[2025-09-21 21:05:42.912] [ERROR] [Manifest] ProceduralHexRenderer::create_shaders() - fragment shader created successfully[0m
+[0;32m[2025-09-21 21:05:42.913] [INFO] [Manifest] Procedural hex renderer initialized successfully[0m
+[0;32m[2025-09-21 21:05:42.913] [INFO] [Manifest] 🎮 Manifest Engine fully initialized! Starting main game loop...[0m
+[0;32m[2025-09-21 21:05:42.913] [INFO] [Manifest] Controls: WASD = Move, Mouse = RTS Camera, Right-Click = Select, F1 = Debug, ESC = Menu[0m
+[0;32m[2025-09-21 21:05:42.913] [INFO] [Manifest] Ente

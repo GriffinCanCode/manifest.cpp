@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../../world/tiles/Tile.hpp"
-#include "../common/HexRenderer.hpp"
+#include "../common/ProceduralHexRenderer.hpp"
 
 namespace Manifest {
 namespace Render {
@@ -19,7 +19,7 @@ using namespace World::Tiles;
  */
 class ProceduralHexDemo {
    private:
-    std::unique_ptr<HexRenderer> hex_renderer_;
+    std::unique_ptr<ProceduralHexRenderer> hex_renderer_;
     std::vector<std::unique_ptr<Tile>> demo_tiles_;
 
     // Demo parameters

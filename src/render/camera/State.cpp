@@ -9,7 +9,7 @@
 namespace Manifest::Render::CameraSystem {
 
 // Snapshot implementation
-Snapshot::Snapshot(const Core::Graphics::Camera& camera, ControlMode mode, std::string desc) noexcept
+Snapshot::Snapshot(const Core::Graphics::Camera& camera, Controls::ControlMode mode, std::string desc) noexcept
     : position(camera.position())
     , target(camera.target())
     , up(camera.up())
@@ -96,7 +96,7 @@ Result<std::string, SerializationError> BinarySerializer::serialize(const Snapsh
         stream.write(reinterpret_cast<const char*>(&snapshot.aspect_ratio), sizeof(float));
         stream.write(reinterpret_cast<const char*>(&snapshot.near_plane), sizeof(float));
         stream.write(reinterpret_cast<const char*>(&snapshot.far_plane), sizeof(float));
-        stream.write(reinterpret_cast<const char*>(&snapshot.control_mode), sizeof(ControlMode));
+        stream.write(reinterpret_cast<const char*>(&snapshot.control_mode), sizeof(Controls::ControlMode));
         
         // Write description
         if (!snapshot.description.empty()) {
@@ -134,7 +134,7 @@ Result<Snapshot, SerializationError> BinarySerializer::deserialize(const std::st
         stream.read(reinterpret_cast<char*>(&snapshot.aspect_ratio), sizeof(float));
         stream.read(reinterpret_cast<char*>(&snapshot.near_plane), sizeof(float));
         stream.read(reinterpret_cast<char*>(&snapshot.far_plane), sizeof(float));
-        stream.read(reinterpret_cast<char*>(&snapshot.control_mode), sizeof(ControlMode));
+        stream.read(reinterpret_cast<char*>(&snapshot.control_mode), sizeof(Controls::ControlMode));
         
         // Read description
         if (header.description_length > 0) {
@@ -234,7 +234,7 @@ Result<Snapshot, SerializationError> JsonSerializer::deserialize(const std::stri
         snapshot.aspect_ratio = extract_float("aspect_ratio");
         snapshot.near_plane = extract_float("near_plane");
         snapshot.far_plane = extract_float("far_plane");
-        snapshot.control_mode = static_cast<ControlMode>(static_cast<int>(extract_float("control_mode")));
+        snapshot.control_mode = static_cast<Controls::ControlMode>(static_cast<int>(extract_float("control_mode")));
         
         // Extract timestamp and description (simplified)
         snapshot.timestamp = std::chrono::system_clock::from_time_t(static_cast<std::time_t>(extract_float("timestamp")));
@@ -250,13 +250,13 @@ Result<Snapshot, SerializationError> JsonSerializer::deserialize(const std::stri
 }
 
 // StateManager implementation
-StateManager::StateManager(std::unique_ptr<ISerializer> serializer) noexcept
+State::StateManager::StateManager(std::unique_ptr<ISerializer> serializer) noexcept
     : serializer_(serializer ? std::move(serializer) : std::make_unique<BinarySerializer>())
 {
 }
 
-Result<void, std::string> StateManager::save_state(const std::string& name, const Core::Graphics::Camera& camera, 
-                                ControlMode mode, const std::string& description) noexcept {
+Result<void, std::string> State::StateManager::save_state(const std::string& name, const Core::Graphics::Camera& camera, 
+                                Controls::ControlMode mode, const std::string& description) noexcept {
     if (name.empty()) {
         return Result<void, std::string>{"State name cannot be empty"};
     }
@@ -273,7 +273,7 @@ Result<void, std::string> StateManager::save_state(const std::string& name, cons
     return Result<void, std::string>{};
 }
 
-Result<void, std::string> StateManager::restore_state(const std::string& name, Core::Graphics::Camera& camera) noexcept {
+Result<void, std::string> State::StateManager::restore_state(const std::string& name, Core::Graphics::Camera& camera) noexcept {
     auto it = saved_states_.find(name);
     if (it == saved_states_.end()) {
         return Result<void, std::string>{"State not found: " + name};
@@ -285,7 +285,7 @@ Result<void, std::string> StateManager::restore_state(const std::string& name, C
     return Result<void, std::string>{};
 }
 
-Result<void, std::string> StateManager::delete_state(const std::string& name) noexcept {
+Result<void, std::string> State::StateManager::delete_state(const std::string& name) noexcept {
     auto it = saved_states_.find(name);
     if (it == saved_states_.end()) {
         return Result<void, std::string>{"State not found: " + name};
@@ -306,11 +306,11 @@ Result<void, std::string> StateManager::delete_state(const std::string& name) no
     return Result<void, std::string>{};
 }
 
-bool StateManager::has_state(const std::string& name) const noexcept {
+bool State::StateManager::has_state(const std::string& name) const noexcept {
     return saved_states_.find(name) != saved_states_.end();
 }
 
-std::vector<std::string> StateManager::list_states() const noexcept {
+std::vector<std::string> State::StateManager::list_states() const noexcept {
     std::vector<std::string> names;
     names.reserve(saved_states_.size());
     
@@ -321,7 +321,7 @@ std::vector<std::string> StateManager::list_states() const noexcept {
     return names;
 }
 
-Result<Snapshot, std::string> StateManager::get_snapshot(const std::string& name) const noexcept {
+Result<Snapshot, std::string> State::StateManager::get_snapshot(const std::string& name) const noexcept {
     auto it = saved_states_.find(name);
     if (it == saved_states_.end()) {
         return Result<Snapshot, std::string>{"State not found: " + name};
@@ -330,16 +330,16 @@ Result<Snapshot, std::string> StateManager::get_snapshot(const std::string& name
     return Result<Snapshot, std::string>{it->second};
 }
 
-Result<void, std::string> StateManager::auto_save(const Core::Graphics::Camera& camera, ControlMode mode) noexcept {
+Result<void, std::string> State::StateManager::auto_save(const Core::Graphics::Camera& camera, Controls::ControlMode mode) noexcept {
     std::string auto_name = generate_auto_save_name();
     return save_state(auto_name, camera, mode, "Auto-saved state");
 }
 
-void StateManager::clear_history() noexcept {
+void State::StateManager::clear_history() noexcept {
     state_history_.clear();
 }
 
-Result<std::string, StateError> StateManager::export_state(const std::string& name) const noexcept {
+Result<std::string, StateError> State::StateManager::export_state(const std::string& name) const noexcept {
     auto it = saved_states_.find(name);
     if (it == saved_states_.end()) {
         return Result<std::string, StateError>{StateError{"State not found: " + name}};
@@ -353,7 +353,7 @@ Result<std::string, StateError> StateManager::export_state(const std::string& na
     }
 }
 
-Result<void, StateError> StateManager::import_state(const std::string& name, const std::string& data) noexcept {
+Result<void, StateError> State::StateManager::import_state(const std::string& name, const std::string& data) noexcept {
     auto snapshot_result = serializer_->deserialize(data);
     if (!snapshot_result.has_value()) {
         return Result<void, StateError>{StateError{"Failed to deserialize state: " + snapshot_result.error().message}};
@@ -365,7 +365,7 @@ Result<void, StateError> StateManager::import_state(const std::string& name, con
     return Result<void, StateError>{};
 }
 
-Result<std::string, StateError> StateManager::export_all_states() const noexcept {
+Result<std::string, StateError> State::StateManager::export_all_states() const noexcept {
     // Export as JSON array
     try {
         std::ostringstream json;
@@ -392,7 +392,7 @@ Result<std::string, StateError> StateManager::export_all_states() const noexcept
     }
 }
 
-Result<void, StateError> StateManager::import_all_states(const std::string& data) noexcept {
+Result<void, StateError> State::StateManager::import_all_states(const std::string& data) noexcept {
     // Simplified JSON parser for import (would use proper library in production)
     try {
         // This would be properly implemented with rapidjson or similar
@@ -402,13 +402,13 @@ Result<void, StateError> StateManager::import_all_states(const std::string& data
     }
 }
 
-void StateManager::set_serializer(std::unique_ptr<ISerializer> serializer) noexcept {
+void State::StateManager::set_serializer(std::unique_ptr<ISerializer> serializer) noexcept {
     if (serializer) {
         serializer_ = std::move(serializer);
     }
 }
 
-std::size_t StateManager::memory_usage() const noexcept {
+std::size_t State::StateManager::memory_usage() const noexcept {
     std::size_t total = 0;
     for (const auto& [name, snapshot] : saved_states_) {
         total += sizeof(snapshot) + name.length() + snapshot.description.length();
@@ -416,7 +416,7 @@ std::size_t StateManager::memory_usage() const noexcept {
     return total;
 }
 
-void StateManager::add_to_history(const std::string& name) noexcept {
+void State::StateManager::add_to_history(const std::string& name) noexcept {
     // Remove existing entry
     auto it = std::find(state_history_.begin(), state_history_.end(), name);
     if (it != state_history_.end()) {
@@ -428,13 +428,13 @@ void StateManager::add_to_history(const std::string& name) noexcept {
     trim_history();
 }
 
-void StateManager::trim_history() noexcept {
+void State::StateManager::trim_history() noexcept {
     if (state_history_.size() > max_history_size_) {
         state_history_.resize(max_history_size_);
     }
 }
 
-std::string StateManager::generate_auto_save_name() const noexcept {
+std::string State::StateManager::generate_auto_save_name() const noexcept {
     auto now = std::chrono::system_clock::now();
     auto time_t = std::chrono::system_clock::to_time_t(now);
     
@@ -444,8 +444,8 @@ std::string StateManager::generate_auto_save_name() const noexcept {
 }
 
 // StateGuard implementation
-StateGuard::StateGuard(StateManager& manager, const std::string& name, const Core::Graphics::Camera& camera,
-                      bool auto_restore, ControlMode mode, const std::string& description) noexcept
+State::StateGuard::StateGuard(State::StateManager& manager, const std::string& name, const Core::Graphics::Camera& camera,
+                      bool auto_restore, Controls::ControlMode mode, const std::string& description) noexcept
     : manager_(manager)
     , state_name_(name)
     , should_restore_(auto_restore)
@@ -453,26 +453,26 @@ StateGuard::StateGuard(StateManager& manager, const std::string& name, const Cor
     manager_.save_state(name, camera, mode, description);
 }
 
-StateGuard::~StateGuard() noexcept {
+State::StateGuard::~StateGuard() noexcept {
     if (should_restore_) {
         // Can't restore without camera reference - would need different design for automatic restoration
     }
 }
 
-void StateGuard::force_restore(Core::Graphics::Camera& camera) noexcept {
+void State::StateGuard::force_restore(Core::Graphics::Camera& camera) noexcept {
     manager_.restore_state(state_name_, camera);
     should_restore_ = false;
 }
 
 // Transition implementation
-Transition::Transition(Snapshot start, Snapshot end, Config config) noexcept
+State::Transition::Transition(Snapshot start, Snapshot end, Config config) noexcept
     : start_state_(std::move(start))
     , end_state_(std::move(end))
     , config_(config)
 {
 }
 
-bool Transition::update(Core::Graphics::Camera& camera, float delta_time) noexcept {
+bool State::Transition::update(Core::Graphics::Camera& camera, float delta_time) noexcept {
     if (complete_) return true;
     
     if (!initialized_) {
@@ -508,17 +508,17 @@ bool Transition::update(Core::Graphics::Camera& camera, float delta_time) noexce
     return complete_;
 }
 
-void Transition::reset() noexcept {
+void State::Transition::reset() noexcept {
     elapsed_ = 0.0f;
     complete_ = false;
     initialized_ = false;
 }
 
-float Transition::progress() const noexcept {
+float State::Transition::progress() const noexcept {
     return std::clamp(elapsed_ / config_.duration, 0.0f, 1.0f);
 }
 
-float Transition::apply_easing(float t) const noexcept {
+float State::Transition::apply_easing(float t) const noexcept {
     // Simple easing functions
     switch (config_.easing) {
         case 0: return t; // Linear
@@ -530,49 +530,49 @@ float Transition::apply_easing(float t) const noexcept {
     }
 }
 
-Vec3f Transition::interpolate_vector(const Vec3f& start, const Vec3f& end, float t) const noexcept {
+Vec3f State::Transition::interpolate_vector(const Vec3f& start, const Vec3f& end, float t) const noexcept {
     return start + (end - start) * t;
 }
 
-float Transition::interpolate_scalar(float start, float end, float t) const noexcept {
+float State::Transition::interpolate_scalar(float start, float end, float t) const noexcept {
     return start + (end - start) * t;
 }
 
 // Presets implementation
 namespace Presets {
 
-StateManager create_default_manager() noexcept {
-    return StateManager(std::make_unique<BinarySerializer>());
+State::StateManager create_default_manager() noexcept {
+    return State::StateManager(std::make_unique<BinarySerializer>());
 }
 
 Snapshot world_overview() noexcept {
     Core::Graphics::Camera camera;
     camera.look_at(Vec3f{0.0f, 100.0f, 100.0f}, Vec3f{0.0f, 0.0f, 0.0f});
-    return Snapshot(camera, ControlMode::Orbital, "World overview");
+    return Snapshot(camera, Controls::ControlMode::Orbital, "World overview");
 }
 
 Snapshot close_inspection() noexcept {
     Core::Graphics::Camera camera;
     camera.look_at(Vec3f{5.0f, 5.0f, 5.0f}, Vec3f{0.0f, 0.0f, 0.0f});
-    return Snapshot(camera, ControlMode::Free, "Close inspection");
+    return Snapshot(camera, Controls::ControlMode::Free, "Close inspection");
 }
 
 Snapshot strategic_view() noexcept {
     Core::Graphics::Camera camera;
     camera.look_at(Vec3f{0.0f, 50.0f, 0.0f}, Vec3f{0.0f, 0.0f, 0.0f});
-    return Snapshot(camera, ControlMode::Orbital, "Strategic overview");
+    return Snapshot(camera, Controls::ControlMode::Orbital, "Strategic overview");
 }
 
 Snapshot cinematic_angle() noexcept {
     Core::Graphics::Camera camera;
     camera.look_at(Vec3f{20.0f, 10.0f, 30.0f}, Vec3f{0.0f, 0.0f, 0.0f});
-    return Snapshot(camera, ControlMode::Cinematic, "Cinematic angle");
+    return Snapshot(camera, Controls::ControlMode::Cinematic, "Cinematic angle");
 }
 
-void save_common_states(StateManager& manager, const Core::Graphics::Camera& camera) noexcept {
-    manager.save_state("world_overview", camera, ControlMode::Orbital, "Default world view");
-    manager.save_state("close_up", camera, ControlMode::Free, "Detail inspection");
-    manager.save_state("strategic", camera, ControlMode::Orbital, "Strategic planning");
+void save_common_states(State::StateManager& manager, const Core::Graphics::Camera& camera) noexcept {
+    manager.save_state("world_overview", camera, Controls::ControlMode::Orbital, "Default world view");
+    manager.save_state("close_up", camera, Controls::ControlMode::Free, "Detail inspection");
+    manager.save_state("strategic", camera, Controls::ControlMode::Orbital, "Strategic planning");
 }
 
 } // namespace Presets

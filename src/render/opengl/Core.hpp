@@ -41,6 +41,12 @@ class Core : public Renderer {
     // Current state
     RenderTargetHandle current_render_target_{};
     PipelineHandle current_pipeline_{};
+    
+    // Push constants simulation using uniform buffer
+    GLuint push_constants_buffer_{0};
+    
+    // Vertex Array Object for vertex state
+    GLuint vertex_array_object_{0};
 
    public:
     Core() : loader_{std::make_unique<Loader>()} {}
@@ -82,6 +88,8 @@ class Core : public Renderer {
     void bind_index_buffer(BufferHandle buffer, std::size_t offset) override;
     void bind_texture(TextureHandle texture, std::uint32_t binding) override;
     void bind_uniform_buffer(BufferHandle buffer, std::uint32_t binding, std::size_t offset, std::size_t size) override;
+    void push_constants(::Manifest::Core::Modern::span<const ::Manifest::Core::Modern::byte> data,
+                       std::uint32_t offset = 0) override;
 
     // Drawing
     void draw(const DrawCommand& command) override;

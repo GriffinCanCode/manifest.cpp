@@ -194,7 +194,7 @@ public:
     LayerTransition(Layer from, Layer target, float cost) noexcept
         : from_layer_{from}, to_layer_{target}, transition_cost_{cost} {}
     
-    LayerTransition& requires(std::uint8_t improvement) {
+    LayerTransition& requires_improvement(std::uint8_t improvement) {
         required_improvements_.push_back(improvement);
         return *this;
     }
@@ -234,7 +234,7 @@ class LayerRegistry {
 public:
     LayerRegistry();
     
-    std::optional<float> transition_cost(const LayeredTile& /*tile*/, 
+    std::optional<float> transition_cost(const LayeredTile& tile, 
                                         Layer /*from*/, Layer /*target*/) const noexcept {
         for (const auto& transition : transitions_) {
             if (transition.can_transition(tile)) {

@@ -15,9 +15,9 @@ namespace Manifest::Render::CameraSystem {
 // Complete camera system that integrates all components
 class System {
     Core::Graphics::Camera camera_;
-    Controls controls_;
-    Behavior::Controller behavior_controller_;
-    State::Manager state_manager_;
+    Controls::Controls controls_;
+    Controller behavior_controller_;
+    State::StateManager state_manager_;
     Cursor::Manager cursor_manager_;
     
     // Entity selection management (using int as placeholder)
@@ -33,14 +33,14 @@ public:
     const Core::Graphics::Camera& camera() const noexcept { return camera_; }
     
     // Component access
-    Controls& controls() noexcept { return controls_; }
-    const Controls& controls() const noexcept { return controls_; }
+    Controls::Controls& controls() noexcept { return controls_; }
+    const Controls::Controls& controls() const noexcept { return controls_; }
     
-    Behavior::Controller& behavior() noexcept { return behavior_controller_; }
-    const Behavior::Controller& behavior() const noexcept { return behavior_controller_; }
+    Controller& behavior() noexcept { return behavior_controller_; }
+    const Controller& behavior() const noexcept { return behavior_controller_; }
     
-    State::Manager& state() noexcept { return state_manager_; }
-    const State::Manager& state() const noexcept { return state_manager_; }
+    State::StateManager& state() noexcept { return state_manager_; }
+    const State::StateManager& state() const noexcept { return state_manager_; }
     
     Cursor::Manager& cursor() noexcept { return cursor_manager_; }
     const Cursor::Manager& cursor() const noexcept { return cursor_manager_; }

@@ -7,6 +7,7 @@ add_executable(unit_tests
     MapTest.cpp
     TerrainGeneratorTest.cpp
     CameraTest.cpp
+    HexRendererTest.cpp
 )
 
 target_link_libraries(unit_tests

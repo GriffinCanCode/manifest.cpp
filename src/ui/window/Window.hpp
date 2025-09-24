@@ -97,8 +97,7 @@ public:
     virtual Result<void> set_cursor_mode(CursorMode mode) = 0;
     virtual Result<void> close() = 0;
 
-    // Surface creation for renderers
-    virtual Result<void*> create_vulkan_surface(void* instance) const = 0;
+    // Surface creation for renderers - OpenGL only
     virtual Result<void> make_opengl_context_current() const = 0;
 };
 

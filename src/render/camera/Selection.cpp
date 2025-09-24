@@ -6,7 +6,7 @@
 namespace Manifest::Render::CameraSystem {
 
 // Box implementation
-void Box::update(Vec2i current_pos) noexcept {
+void Selection::Box::update(Vec2i current_pos) noexcept {
     end = current_pos;
     
     // Calculate min/max bounds
@@ -18,33 +18,33 @@ void Box::update(Vec2i current_pos) noexcept {
     is_valid = (box_size.x() >= min_size && box_size.y() >= min_size);
 }
 
-bool Box::contains(Vec2i point) const noexcept {
+bool Selection::Box::contains(Vec2i point) const noexcept {
     return point.x() >= min.x() && point.x() <= max.x() &&
            point.y() >= min.y() && point.y() <= max.y();
 }
 
-float Box::area() const noexcept {
+float Selection::Box::area() const noexcept {
     Vec2i box_size = size();
     return static_cast<float>(box_size.x() * box_size.y());
 }
 
 // Manager implementation
 template<typename EntityType>
-void Manager<EntityType>::register_selectable(std::unique_ptr<ISelectable<EntityType>> selectable) {
+void Selection::Manager<EntityType>::register_selectable(std::unique_ptr<Selection::ISelectable<EntityType>> selectable) {
     if (selectable) {
         selectables_.push_back(std::move(selectable));
     }
 }
 
 template<typename EntityType>
-void Manager<EntityType>::unregister_selectable(SelectionId id) {
+void Selection::Manager<EntityType>::unregister_selectable(Selection::SelectionId id) {
     // Remove from selection if selected
     selected_ids_.erase(id);
     
     // Remove from selectables
     selectables_.erase(
         std::remove_if(selectables_.begin(), selectables_.end(),
-            [id](const std::unique_ptr<ISelectable<EntityType>>& selectable) {
+            [id](const std::unique_ptr<Selection::ISelectable<EntityType>>& selectable) {
                 return selectable->id() == id;
             }),
         selectables_.end()
@@ -54,14 +54,14 @@ void Manager<EntityType>::unregister_selectable(SelectionId id) {
 }
 
 template<typename EntityType>
-void Manager<EntityType>::clear_selectables() {
+void Selection::Manager<EntityType>::clear_selectables() {
     selectables_.clear();
     selected_ids_.clear();
     notify_selection_changed();
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::handle_mouse_button(const UI::Window::MouseButtonEvent& event) {
+Result<void, std::string> Selection::Manager<EntityType>::handle_mouse_button(const UI::Window::MouseButtonEvent& event) {
     if (event.button != UI::Window::MouseButton::Left) {
         return success<void, std::string>();
     }
@@ -96,7 +96,7 @@ Result<void, std::string> Manager<EntityType>::handle_mouse_button(const UI::Win
         } else if (!state_.is_dragging) {
             // Point selection - find entity at click position
             Vec2i click_pos{static_cast<int>(mouse_pos.x()), static_cast<int>(mouse_pos.y())};
-            SelectionId clicked_id = SelectionId::invalid();
+            Selection::SelectionId clicked_id = Selection::SelectionId::invalid();
             
             for (const auto& selectable : selectables_) {
                 Vec2i diff = selectable->screen_position() - click_pos;
@@ -109,7 +109,7 @@ Result<void, std::string> Manager<EntityType>::handle_mouse_button(const UI::Win
             
             if (clicked_id.is_valid()) {
                 select(clicked_id, state_.current_mode);
-            } else if (state_.current_mode == Mode::Replace) {
+            } else if (state_.current_mode == Selection::Mode::Replace) {
                 deselect_all();
             }
         }
@@ -121,7 +121,7 @@ Result<void, std::string> Manager<EntityType>::handle_mouse_button(const UI::Win
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::handle_mouse_move(const UI::Window::MouseMoveEvent& event) {
+Result<void, std::string> Selection::Manager<EntityType>::handle_mouse_move(const UI::Window::MouseMoveEvent& event) {
     Vec2f current_pos{static_cast<float>(event.position.x()), static_cast<float>(event.position.y())};
     state_.mouse_current = current_pos;
     
@@ -148,7 +148,7 @@ Result<void, std::string> Manager<EntityType>::handle_mouse_move(const UI::Windo
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::handle_key(const UI::Window::KeyEvent& event) {
+Result<void, std::string> Selection::Manager<EntityType>::handle_key(const UI::Window::KeyEvent& event) {
     if (event.action != UI::Window::Action::Press) {
         return success<void, std::string>();
     }
@@ -177,7 +177,7 @@ Result<void, std::string> Manager<EntityType>::handle_key(const UI::Window::KeyE
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::select(SelectionId id, Mode mode) {
+Result<void, std::string> Selection::Manager<EntityType>::select(Selection::SelectionId id, Selection::Mode mode) {
     auto* selectable = find_selectable(id);
     if (!selectable || !selectable->is_selectable()) {
         return error<void, std::string>("Entity not selectable");
@@ -191,7 +191,7 @@ Result<void, std::string> Manager<EntityType>::select(SelectionId id, Mode mode)
     bool changed = false;
     
     switch (mode) {
-        case Mode::Replace:
+        case Selection::Mode::Replace:
             if (!selected_ids_.empty() || !was_selected) {
                 selected_ids_.clear();
                 selected_ids_.insert(id);
@@ -199,21 +199,21 @@ Result<void, std::string> Manager<EntityType>::select(SelectionId id, Mode mode)
             }
             break;
             
-        case Mode::Add:
+        case Selection::Mode::Add:
             if (!was_selected) {
                 selected_ids_.insert(id);
                 changed = true;
             }
             break;
             
-        case Mode::Remove:
+        case Selection::Mode::Remove:
             if (was_selected) {
                 selected_ids_.erase(id);
                 changed = true;
             }
             break;
             
-        case Mode::Toggle:
+        case Selection::Mode::Toggle:
             if (was_selected) {
                 selected_ids_.erase(id);
             } else {
@@ -237,14 +237,14 @@ Result<void, std::string> Manager<EntityType>::select(SelectionId id, Mode mode)
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::select_multiple(const std::vector<SelectionId>& ids, Mode mode) {
-    if (mode == Mode::Replace) {
+Result<void, std::string> Selection::Manager<EntityType>::select_multiple(const std::vector<Selection::SelectionId>& ids, Mode mode) {
+    if (mode == Selection::Mode::Replace) {
         selected_ids_.clear();
     }
     
     bool changed = false;
     
-    for (SelectionId id : ids) {
+    for (Selection::SelectionId id : ids) {
         auto* selectable = find_selectable(id);
         if (!selectable || !selectable->is_selectable()) continue;
         
@@ -253,8 +253,8 @@ Result<void, std::string> Manager<EntityType>::select_multiple(const std::vector
         bool was_selected = is_selected(id);
         
         switch (mode) {
-            case Mode::Replace:
-            case Mode::Add:
+            case Selection::Mode::Replace:
+            case Selection::Mode::Add:
                 if (!was_selected) {
                     selected_ids_.insert(id);
                     changed = true;
@@ -264,7 +264,7 @@ Result<void, std::string> Manager<EntityType>::select_multiple(const std::vector
                 }
                 break;
                 
-            case Mode::Remove:
+            case Selection::Mode::Remove:
                 if (was_selected) {
                     selected_ids_.erase(id);
                     changed = true;
@@ -274,7 +274,7 @@ Result<void, std::string> Manager<EntityType>::select_multiple(const std::vector
                 }
                 break;
                 
-            case Mode::Toggle:
+            case Selection::Mode::Toggle:
                 if (was_selected) {
                     selected_ids_.erase(id);
                     if (on_entity_deselected_) {
@@ -299,14 +299,14 @@ Result<void, std::string> Manager<EntityType>::select_multiple(const std::vector
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::select_in_box(const Box& box, Mode mode) {
-    std::vector<SelectionId> entities_in_box = find_entities_in_box(box);
+Result<void, std::string> Selection::Manager<EntityType>::select_in_box(const Selection::Box& box, Mode mode) {
+    std::vector<Selection::SelectionId> entities_in_box = find_entities_in_box(box);
     return select_multiple(entities_in_box, mode);
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::select_all() {
-    std::vector<SelectionId> all_ids;
+Result<void, std::string> Selection::Manager<EntityType>::select_all() {
+    std::vector<Selection::SelectionId> all_ids;
     
     for (const auto& selectable : selectables_) {
         if (selectable->is_selectable()) {
@@ -316,16 +316,16 @@ Result<void, std::string> Manager<EntityType>::select_all() {
         }
     }
     
-    return select_multiple(all_ids, Mode::Replace);
+    return select_multiple(all_ids, Selection::Mode::Replace);
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::deselect_all() {
+Result<void, std::string> Selection::Manager<EntityType>::deselect_all() {
     if (selected_ids_.empty()) {
         return success<void, std::string>();
     }
     
-    for (SelectionId id : selected_ids_) {
+    for (Selection::SelectionId id : selected_ids_) {
         auto* selectable = find_selectable(id);
         if (selectable && on_entity_deselected_) {
             on_entity_deselected_(id, selectable->entity());
@@ -339,13 +339,13 @@ Result<void, std::string> Manager<EntityType>::deselect_all() {
 }
 
 template<typename EntityType>
-Result<void, std::string> Manager<EntityType>::invert_selection() {
-    std::unordered_set<SelectionId> new_selection;
+Result<void, std::string> Selection::Manager<EntityType>::invert_selection() {
+    std::unordered_set<Selection::SelectionId> new_selection;
     
     for (const auto& selectable : selectables_) {
         if (selectable->is_selectable()) {
             if (!selection_filter_ || selection_filter_(selectable->entity())) {
-                SelectionId id = selectable->id();
+                Selection::SelectionId id = selectable->id();
                 if (selected_ids_.find(id) == selected_ids_.end()) {
                     new_selection.insert(id);
                 }
@@ -360,16 +360,16 @@ Result<void, std::string> Manager<EntityType>::invert_selection() {
 }
 
 template<typename EntityType>
-std::vector<SelectionId> Manager<EntityType>::selected_ids() const {
-    return std::vector<SelectionId>(selected_ids_.begin(), selected_ids_.end());
+std::vector<Selection::SelectionId> Selection::Manager<EntityType>::selected_ids() const {
+    return std::vector<Selection::SelectionId>(selected_ids_.begin(), selected_ids_.end());
 }
 
 template<typename EntityType>
-std::vector<EntityType*> Manager<EntityType>::selected_entities() {
+std::vector<EntityType*> Selection::Manager<EntityType>::selected_entities() {
     std::vector<EntityType*> entities;
     entities.reserve(selected_ids_.size());
     
-    for (SelectionId id : selected_ids_) {
+    for (Selection::SelectionId id : selected_ids_) {
         auto* selectable = find_selectable(id);
         if (selectable) {
             entities.push_back(&selectable->entity());
@@ -380,11 +380,11 @@ std::vector<EntityType*> Manager<EntityType>::selected_entities() {
 }
 
 template<typename EntityType>
-std::vector<const EntityType*> Manager<EntityType>::selected_entities() const {
+std::vector<const EntityType*> Selection::Manager<EntityType>::selected_entities() const {
     std::vector<const EntityType*> entities;
     entities.reserve(selected_ids_.size());
     
-    for (SelectionId id : selected_ids_) {
+    for (Selection::SelectionId id : selected_ids_) {
         const auto* selectable = find_selectable(id);
         if (selectable) {
             entities.push_back(&selectable->entity());
@@ -395,38 +395,38 @@ std::vector<const EntityType*> Manager<EntityType>::selected_entities() const {
 }
 
 template<typename EntityType>
-bool Manager<EntityType>::is_selected(SelectionId id) const noexcept {
+bool Selection::Manager<EntityType>::is_selected(Selection::SelectionId id) const noexcept {
     return selected_ids_.find(id) != selected_ids_.end();
 }
 
 template<typename EntityType>
-void Manager<EntityType>::set_selection_changed_callback(std::function<void(const std::vector<SelectionId>&)> callback) {
+void Selection::Manager<EntityType>::set_selection_changed_callback(std::function<void(const std::vector<Selection::SelectionId>&)> callback) {
     on_selection_changed_ = std::move(callback);
 }
 
 template<typename EntityType>
-void Manager<EntityType>::set_entity_selected_callback(std::function<void(SelectionId, const EntityType&)> callback) {
+void Selection::Manager<EntityType>::set_entity_selected_callback(std::function<void(Selection::SelectionId, const EntityType&)> callback) {
     on_entity_selected_ = std::move(callback);
 }
 
 template<typename EntityType>
-void Manager<EntityType>::set_entity_deselected_callback(std::function<void(SelectionId, const EntityType&)> callback) {
+void Selection::Manager<EntityType>::set_entity_deselected_callback(std::function<void(Selection::SelectionId, const EntityType&)> callback) {
     on_entity_deselected_ = std::move(callback);
 }
 
 template<typename EntityType>
-void Manager<EntityType>::set_selection_filter(std::function<bool(const EntityType&)> filter) {
+void Selection::Manager<EntityType>::set_selection_filter(std::function<bool(const EntityType&)> filter) {
     selection_filter_ = std::move(filter);
 }
 
 template<typename EntityType>
-void Manager<EntityType>::update_selection_mode() noexcept {
+void Selection::Manager<EntityType>::update_selection_mode() noexcept {
     state_.current_mode = determine_mode();
 }
 
 template<typename EntityType>
-std::vector<SelectionId> Manager<EntityType>::find_entities_in_box(const Box& box) const {
-    std::vector<SelectionId> result;
+std::vector<Selection::SelectionId> Selection::Manager<EntityType>::find_entities_in_box(const Selection::Box& box) const {
+    std::vector<Selection::SelectionId> result;
     
     for (const auto& selectable : selectables_) {
         if (selectable->is_selectable() && selectable->is_in_box(box)) {
@@ -440,9 +440,9 @@ std::vector<SelectionId> Manager<EntityType>::find_entities_in_box(const Box& bo
 }
 
 template<typename EntityType>
-ISelectable<EntityType>* Manager<EntityType>::find_selectable(SelectionId id) const {
+Selection::ISelectable<EntityType>* Selection::Manager<EntityType>::find_selectable(Selection::SelectionId id) const {
     auto it = std::find_if(selectables_.begin(), selectables_.end(),
-        [id](const std::unique_ptr<ISelectable<EntityType>>& selectable) {
+        [id](const std::unique_ptr<Selection::ISelectable<EntityType>>& selectable) {
             return selectable->id() == id;
         });
     
@@ -450,38 +450,39 @@ ISelectable<EntityType>* Manager<EntityType>::find_selectable(SelectionId id) co
 }
 
 template<typename EntityType>
-void Manager<EntityType>::notify_selection_changed() {
+void Selection::Manager<EntityType>::notify_selection_changed() {
     if (on_selection_changed_) {
         on_selection_changed_(selected_ids());
     }
 }
 
 template<typename EntityType>
-bool Manager<EntityType>::should_start_box_selection(Vec2f delta) const noexcept {
+bool Selection::Manager<EntityType>::should_start_box_selection(Vec2f delta) const noexcept {
     return enable_box_select_ && delta.length() >= drag_threshold_;
 }
 
 template<typename EntityType>
-Mode Manager<EntityType>::determine_mode() const noexcept {
+Selection::Mode Selection::Manager<EntityType>::determine_mode() const noexcept {
     if (!enable_multiselect_) {
-        return Mode::Replace;
+        return Selection::Mode::Replace;
     }
     
     if (state_.is_toggle()) {
-        return Mode::Toggle;
+        return Selection::Mode::Toggle;
     } else if (state_.is_deselect()) {
-        return Mode::Remove;
+        return Selection::Mode::Remove;
     } else if (state_.is_multiselect()) {
-        return Mode::Add;
+        return Selection::Mode::Add;
     }
     
-    return Mode::Replace;
+    return Selection::Mode::Replace;
 }
 
 // Explicit template instantiations for common types
-template class Manager<int>;  // Placeholder - would use actual entity types
+template class Selection::Manager<int>;  // Placeholder - would use actual entity types
 
 // Selectables implementation
+namespace Selection {
 namespace Selectables {
 
 Unit::Unit(SelectionId id, Vec3f world_pos, int entity)
@@ -498,11 +499,12 @@ bool Unit::is_in_box(const Box& box) const noexcept {
 }
 
 } // namespace Selectables
+} // namespace Selection
 
 // Render utilities (stub implementations)
 namespace Render {
 
-void draw_selection_box(const Box& box, const BoxStyle& style) {
+void draw_selection_box(const Selection::Box& box, const Selection::Render::BoxStyle& style) {
     // Would implement actual rendering here
     // This is a placeholder for the rendering system integration
 }

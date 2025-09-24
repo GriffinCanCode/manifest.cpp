@@ -44,14 +44,7 @@ bool nearly_equal(const Matrix<T, Rows, Cols>& a, const Matrix<T, Rows, Cols>& b
     return true;
 }
 
-// Custom matchers for Google Test
-MATCHER_P(NearlyEqualTo, expected, "") {
-    return nearly_equal(arg, expected);
-}
-
-MATCHER_P2(NearlyEqualTo, expected, tolerance, "") {
-    return nearly_equal(arg, expected, tolerance);
-}
+// Custom matchers would go here if we had gmock available
 
 // Test fixture for deterministic randomness
 class DeterministicTest : public ::testing::Test {

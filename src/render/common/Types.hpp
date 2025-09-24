@@ -158,10 +158,16 @@ struct VertexAttribute {
     std::string_view name{};
 };
 
+enum class VertexInputRate : std::uint8_t {
+    Vertex,    // Per-vertex data
+    Instance   // Per-instance data
+};
+
 struct VertexBinding {
     std::uint32_t binding{};
     std::uint32_t stride{};
     Core::Modern::span<const VertexAttribute> attributes{};
+    VertexInputRate input_rate{VertexInputRate::Vertex};  // Default to per-vertex
 };
 
 struct PipelineDesc {

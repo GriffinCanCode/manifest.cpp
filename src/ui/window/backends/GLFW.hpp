@@ -42,8 +42,7 @@ public:
     Result<void> set_cursor_mode(CursorMode mode) override;
     Result<void> close() override;
 
-    // Surface creation
-    Result<void*> create_vulkan_surface(void* instance) const override;
+    // Surface creation - OpenGL only
     Result<void> make_opengl_context_current() const override;
 
 private:
@@ -77,12 +76,9 @@ public:
     void dispatch_drop(Core::Modern::span<const char*> paths);
 };
 
-// GLFW surface factory
+// GLFW surface factory - OpenGL only
 class GLFWSurfaceFactory : public SurfaceFactory {
 public:
-    [[nodiscard]] SurfaceResult<void*> 
-    create_vulkan_surface(const Window& window, void* instance) const override;
-    
     [[nodiscard]] SurfaceResult<void> 
     make_opengl_current(const Window& window) const override;
     

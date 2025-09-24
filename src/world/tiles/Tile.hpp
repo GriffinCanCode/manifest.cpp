@@ -7,6 +7,9 @@
 
 #include "../../core/types/Types.hpp"
 #include "../generation/Climate.hpp"
+#include "Culture.hpp"
+#include "Ownership.hpp"
+#include "Layers.hpp"
 
 namespace Manifest {
 namespace World {

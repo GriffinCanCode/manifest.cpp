@@ -72,6 +72,8 @@ class Renderer {
     virtual void bind_texture(TextureHandle texture, std::uint32_t binding) = 0;
     virtual void bind_uniform_buffer(BufferHandle buffer, std::uint32_t binding,
                                      std::size_t offset = 0, std::size_t size = 0) = 0;
+    virtual void push_constants(Core::Modern::span<const Core::Modern::byte> data,
+                               std::uint32_t offset = 0) = 0;
 
     virtual void draw(const DrawCommand& command) = 0;
     virtual void draw_indexed(const DrawIndexedCommand& command) = 0;

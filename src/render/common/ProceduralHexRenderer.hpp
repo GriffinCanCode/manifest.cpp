@@ -30,10 +30,10 @@ class ProceduralHexRenderer {
         Vec3f position;         // World position of hex center
         Vec4f color;            // Terrain color
         float elevation;        // Normalized elevation (0.0-1.0)
-        std::uint32_t terrain;  // Terrain type
+        float terrain;          // Terrain type (as float for shader compatibility)
 
         static constexpr std::size_t size() {
-            return sizeof(Vec3f) + sizeof(Vec4f) + sizeof(float) + sizeof(std::uint32_t);
+            return sizeof(Vec3f) + sizeof(Vec4f) + sizeof(float) + sizeof(float);
         }
     };
 
@@ -41,8 +41,8 @@ class ProceduralHexRenderer {
     struct GlobalUniforms {
         Mat4f view_projection_matrix;
         Vec3f camera_position;
-        float hex_radius{1.0f};
-        float height_scale{0.1f};
+        float hex_radius{1.0f};  // Match HexMesh.hpp coordinate system
+        float height_scale{5.0f};  // Increased height scale for more visible elevation
         float time{0.0f};
         Vec2f _padding{};
     };
@@ -58,7 +58,7 @@ class ProceduralHexRenderer {
     };
 
    private:
-    static constexpr std::uint32_t VERTICES_PER_HEX = 7;     // Center + 6 edge vertices
+    static constexpr std::uint32_t VERTICES_PER_HEX = 18;    // 6 triangles * 3 vertices each (matches shader)
     static constexpr std::uint32_t MAX_INSTANCES = 1000000;  // Support up to 1M hex tiles
 
     // Renderer reference
@@ -73,9 +73,9 @@ class ProceduralHexRenderer {
     bool spatial_hash_dirty_{true};
     
     // GPU resources
-    BufferHandle instance_buffer_;
-    BufferHandle global_uniforms_buffer_;
-    BufferHandle lighting_uniforms_buffer_;
+    BufferHandle vertex_buffer_;      // Triangle geometry
+    BufferHandle instance_buffer_;    // Per-hex instance data
+    // Note: Using push constants instead of uniform buffers for MoltenVK compatibility
     ShaderHandle vertex_shader_;
     ShaderHandle fragment_shader_;
     PipelineHandle render_pipeline_;
@@ -144,7 +144,7 @@ class ProceduralHexRenderer {
      * Add a single hex instance for rendering
      */
     void add_instance(const Vec3f& position, const Vec4f& color, float elevation,
-                      std::uint32_t terrain_type);
+                      float terrain_type);
 
     /**
      * Clear all pending instances
@@ -155,6 +155,11 @@ class ProceduralHexRenderer {
      * Render all prepared instances
      */
     [[nodiscard]] Result<void> render();
+    
+    /**
+     * Render complete frame with clear and viewport setup
+     */
+    [[nodiscard]] Result<void> render_frame(const Vec4f& clear_color, const Viewport& viewport);
 
     /**
      * Get current instance count
@@ -195,7 +200,7 @@ class ProceduralHexRenderer {
     [[nodiscard]] Result<void> create_pipeline();
 
     [[nodiscard]] Result<void> upload_instances();
-    [[nodiscard]] Result<void> upload_uniforms();
+    // Note: upload_uniforms() removed - using push constants instead
     
     void update_spatial_hash();
     void ensure_culling_systems();
@@ -228,7 +233,8 @@ inline Vec3f ProceduralHexRenderer::hex_coord_to_world(const HexCoordinate& coor
                                                        float hex_radius) {
     float x = hex_radius * 1.5f * coord.q;
     float z = hex_radius * std::sqrt(3.0f) * (coord.r + coord.q * 0.5f);
-    return Vec3f{x, 0.0f, z};
+    // Set base Y to ground level
+    return Vec3f{x, 0.0f, z};  // Ground level
 }
 
 }  // namespace Manifest::Render
